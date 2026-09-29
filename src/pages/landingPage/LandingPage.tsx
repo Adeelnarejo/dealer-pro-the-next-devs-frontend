@@ -1,24 +1,40 @@
-import About from "../../components/LandingPage/About";
-import Banner from "../../components/LandingPage/Banner";
-import Faqs from "../../components/LandingPage/Faqs";
-import Features from "../../components/LandingPage/Features";
-import Footer from "../../components/LandingPage/Footer";
-import Header from "../../components/LandingPage/Header";
-import Hero from "../../components/LandingPage/Hero";
-import Stats from "../../components/LandingPage/Stats";
-import Testimonials from "../../components/LandingPage/Testimonials";
+import About from "../../components/LandingPage/About.tsx";
+import Banner from "../../components/LandingPage/Banner.tsx";
+import Faqs from "../../components/LandingPage/Faqs.tsx";
+import Features from "../../components/LandingPage/OfferBanner.tsx";
+import Footer from "../../components/LandingPage/Footer.tsx";
+import Header from "../../components/LandingPage/Header.tsx";
+import Hero from "../../components/LandingPage/Hero.tsx";
+import Stats from "../../components/LandingPage/Cars.tsx";
+import Testimonials from "../../components/LandingPage/Testimonials.tsx";
+import ClientReviews from "../../components/LandingPage/ClientReviews.tsx";
 
 const LandingPage = () => {
   return (
-    <div>
+    <div className="min-h-screen bg-white dark:bg-[#020b16]">
+      {/* Global Header */}
       <Header />
-      <Hero />
-      <About />
-      <Stats />
-      <Features />
-      <Testimonials />
-      <Faqs />
-      <Banner />
+
+      {/* Landing Page Content */}
+      <main>
+        <Hero />
+
+        <About />
+
+        <Stats />
+
+        <Features />
+
+        <Testimonials />
+
+        <Faqs />
+
+        <Banner />
+
+        <ClientReviews />
+      </main>
+
+      {/* Global Footer */}
       <Footer />
     </div>
   );

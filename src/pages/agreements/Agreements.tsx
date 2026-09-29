@@ -3,7 +3,7 @@ import AllAgreements from "../../components/Agreements/allAgreements/AllAgreemen
 
 const Agreements = () => {
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen  p-6">
       <AgreementStats />
       <AllAgreements />
     </div>

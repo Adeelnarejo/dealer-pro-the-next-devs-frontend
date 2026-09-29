@@ -19,6 +19,7 @@ interface StatCardProps {
   subtitle: string;
   icon: React.ReactNode;
   color: string;
+  iconBg: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -27,35 +28,90 @@ const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   icon,
   color,
+  iconBg,
 }) => (
-  <div className="bg-white rounded-[20px] p-2 pl-4 dashboard-cards">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-[#5E636B] font-plus-jakarta mt-1">
+  <div
+    className="
+      group
+      relative overflow-hidden
+      rounded-2xl
+      border border-slate-200
+      bg-white
+      p-5
+      shadow-sm
+      transition-all duration-300
+      hover:-translate-y-0.5
+      hover:shadow-md
+
+      dark:border-slate-800
+      dark:bg-slate-900
+      dark:shadow-black/20
+    "
+  >
+    {/* Decorative circle */}
+    <div
+      className="
+        pointer-events-none
+        absolute -right-8 -top-8
+        h-28 w-28
+        rounded-full
+        bg-slate-50
+        transition-transform duration-500
+        group-hover:scale-125
+        dark:bg-slate-800/40
+      "
+    />
+
+    <div className="relative flex items-center justify-between gap-4">
+      <div className="min-w-0">
+        <p
+          className="
+            mb-2
+            text-xs sm:text-sm
+            font-medium
+            text-slate-500
+            dark:text-slate-400
+          "
+        >
           {title}
         </p>
-        <div className="flex items-end gap-2 mb-1">
+
+        <div className="flex items-end gap-2">
           <p
-            className="text-[32px] font-bold font-plus-jakarta text-[#000814] -mb-2"
+            className="
+              truncate
+              text-2xl sm:text-[30px]
+              font-bold
+              tracking-tight
+              text-slate-900
+              dark:text-white
+            "
             title={value}
           >
-            {value.length > 5 ? `${value.slice(0, 7)}...` : value}
+            {value.length > 8 ? `${value.slice(0, 8)}...` : value}
           </p>
-          <p className="text-[12px] font-medium font-plus-jakarta text-[#012F7A]">
+
+          <p
+            className={`
+              mb-1
+              truncate
+              text-[11px] sm:text-xs
+              font-semibold
+              ${color}
+            `}
+          >
             {subtitle}
           </p>
         </div>
       </div>
+
       <div
-        className={`p-3 rounded-lg ${
-          color === "text-blue-600"
-            ? "bg-blue-50"
-            : color === "text-green-600"
-            ? "bg-green-50"
-            : color === "text-purple-600"
-            ? "bg-purple-50"
-            : "bg-gray-50"
-        }`}
+        className={`
+          flex h-12 w-12 shrink-0
+          items-center justify-center
+          rounded-xl
+          ${iconBg}
+        `}
       >
         {icon}
       </div>
@@ -72,6 +128,7 @@ const CustomerStats = () => {
     totalSpentSales: 0,
     totalSpentBrokerage: 0,
   });
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,38 +136,65 @@ const CustomerStats = () => {
     const fetchCustomerStats = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        const response = await makeGetRequest("customer/getAllCustomers");
+        const response = await makeGetRequest(
+          "customer/getAllCustomers"
+        );
+
         if (response.data && response.data.success) {
           const { data } = response.data;
           const customers: Customer[] = data || [];
 
           const purchasingCustomers = customers;
-          const salesCustomers = customers.filter((c) => c.type === "Client");
-          const brokerageClients = customers.filter((c) => c.type === "Agency");
+
+          const salesCustomers = customers.filter(
+            (c) => c.type === "Client"
+          );
+
+          const brokerageClients = customers.filter(
+            (c) => c.type === "Agency"
+          );
 
           setStats({
-            totalPurchasingCustomers: purchasingCustomers.length,
-            totalSalesCustomers: salesCustomers.length,
-            totalBrokerageClients: brokerageClients.length,
-            totalSpentPurchasing: purchasingCustomers.reduce(
-              (sum, c) => sum + c.totalSpent,
-              0
-            ),
-            totalSpentSales: salesCustomers.reduce(
-              (sum, c) => sum + c.totalSpent,
-              0
-            ),
-            totalSpentBrokerage: brokerageClients.reduce(
-              (sum, c) => sum + c.totalSpent,
-              0
-            ),
+            totalPurchasingCustomers:
+              purchasingCustomers.length,
+
+            totalSalesCustomers:
+              salesCustomers.length,
+
+            totalBrokerageClients:
+              brokerageClients.length,
+
+            totalSpentPurchasing:
+              purchasingCustomers.reduce(
+                (sum, c) => sum + (Number(c.totalSpent) || 0),
+                0
+              ),
+
+            totalSpentSales:
+              salesCustomers.reduce(
+                (sum, c) => sum + (Number(c.totalSpent) || 0),
+                0
+              ),
+
+            totalSpentBrokerage:
+              brokerageClients.reduce(
+                (sum, c) => sum + (Number(c.totalSpent) || 0),
+                0
+              ),
           });
         } else {
-          setError(response.data?.message || "Failed to fetch customer stats.");
+          setError(
+            response.data?.message ||
+              "Failed to fetch customer stats."
+          );
         }
       } catch (err) {
-        setError("An error occurred while fetching customer stats.");
+        setError(
+          "An error occurred while fetching customer stats."
+        );
+
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -124,24 +208,30 @@ const CustomerStats = () => {
     if (error) {
       return [
         {
-          title: "Totalt antal inköpskunder",
+          title: "Total Purchasing Customers",
           value: "00",
           subtitle: "0 kr spent",
-          color: "text-green-600",
+          color: "text-emerald-600 dark:text-emerald-400",
+          iconBg:
+            "bg-emerald-50 dark:bg-emerald-950/30",
           icon: <PurchasingAgreementIcon />,
         },
         {
-          title: "Totala försäljningskunder",
+          title: "Total Sales Customers",
           value: "00",
           subtitle: "0 kr spent",
-          color: "text-blue-600",
+          color: "text-blue-600 dark:text-blue-400",
+          iconBg:
+            "bg-blue-50 dark:bg-blue-950/30",
           icon: <SalesAgreementIcon />,
         },
         {
-          title: "Totalt antal mäklarkunder",
+          title: "Total Brokerage Clients",
           value: "00",
           subtitle: "0 kr spent",
-          color: "text-purple-600",
+          color: "text-purple-600 dark:text-purple-400",
+          iconBg:
+            "bg-purple-50 dark:bg-purple-950/30",
           icon: <BrokerageAgreementIcon />,
         },
       ];
@@ -149,48 +239,82 @@ const CustomerStats = () => {
 
     return [
       {
-        title: "Totalt antal inköpskunder",
-        value: stats.totalPurchasingCustomers.toString().padStart(2, "0"),
+        title: "Total Purchasing Customers",
+        value: stats.totalPurchasingCustomers
+          .toString()
+          .padStart(2, "0"),
         subtitle: `${stats.totalSpentPurchasing.toLocaleString()} kr spent`,
-        color: "text-green-600",
+        color: "text-emerald-600 dark:text-emerald-400",
+        iconBg:
+          "bg-emerald-50 dark:bg-emerald-950/30",
         icon: <PurchasingAgreementIcon />,
       },
       {
-        title: "Totala försäljningskunder",
-        value: stats.totalSalesCustomers.toString().padStart(2, "0"),
+        title: "Total Sales Customers",
+        value: stats.totalSalesCustomers
+          .toString()
+          .padStart(2, "0"),
         subtitle: `${stats.totalSpentSales.toLocaleString()} kr spent`,
-        color: "text-blue-600",
+        color: "text-blue-600 dark:text-blue-400",
+        iconBg:
+          "bg-blue-50 dark:bg-blue-950/30",
         icon: <SalesAgreementIcon />,
       },
       {
-        title: "Totalt antal mäklarkunder",
-        value: stats.totalBrokerageClients.toString().padStart(2, "0"),
+        title: "Total Brokerage Clients",
+        value: stats.totalBrokerageClients
+          .toString()
+          .padStart(2, "0"),
         subtitle: `${stats.totalSpentBrokerage.toLocaleString()} kr spent`,
-        color: "text-purple-600",
+        color: "text-purple-600 dark:text-purple-400",
+        iconBg:
+          "bg-purple-50 dark:bg-purple-950/30",
         icon: <BrokerageAgreementIcon />,
       },
     ];
   };
 
+  /* =====================================================
+     LOADING
+  ===================================================== */
+
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="bg-white rounded-[20px] p-6 dashboard-cards animate-pulse"
+            className="
+              rounded-2xl
+              border border-slate-200
+              bg-white
+              p-5
+              shadow-sm
+              dark:border-slate-800
+              dark:bg-slate-900
+            "
           >
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="flex items-center justify-between">
+              <div className="w-full">
+                <div className="mb-3 h-4 w-40 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="h-8 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+              </div>
+
+              <div className="h-12 w-12 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-700" />
+            </div>
           </div>
         ))}
       </div>
     );
   }
 
+  /* =====================================================
+     STATS
+  ===================================================== */
+
   return (
-    <div className="max-w-full mx-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+    <div className="mb-8 w-full">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {getStatCards().map((stat, idx) => (
           <StatCard key={idx} {...stat} />
         ))}

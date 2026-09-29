@@ -1,10 +1,45 @@
 import { useState } from "react";
-import { Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+  ArrowLeft,
+  ShieldCheck,
+  CarFront,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { makePostRequest } from "../../api/Api";
+import ThemeToggle from "../../theme/ThemeToggle";
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+  organizationNumber: string;
+  companyName: string;
+  agreeToTerms: boolean;
+}
+
+interface ValidationErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+  confirmPassword?: string;
+  organizationNumber?: string;
+  companyName?: string;
+  agreeToTerms?: string;
+}
 
 const SignUp = () => {
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
     email: "",
@@ -15,481 +50,711 @@ const SignUp = () => {
     companyName: "",
     agreeToTerms: false,
   });
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<any>({});
-  const [touched, setTouched] = useState<any>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
 
-  const navigate = useNavigate();
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
-  const togglePasswordVisibility = () => setPasswordVisible(!passwordVisible);
-  const toggleConfirmPasswordVisibility = () =>
-    setConfirmPasswordVisible(!confirmPasswordVisible);
-
-  const validateField = (name: string, value: any) => {
-    switch (name) {
-      case "firstName":
-        return !value ? "Förnamn krävs" : "";
-      case "lastName":
-        return !value ? "Efternamn krävs" : "";
-      case "email":
-        if (!value) return "E-postadress krävs";
-        return !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-          ? "Ange en giltig e-postadress"
-          : "";
-      case "phone":
-        if (!value) return "Telefonnummer krävs";
-        return !/^\+?[0-9\s]+$/.test(value)
-          ? "Ange ett giltigt telefonnummer"
-          : "";
-      case "organizationNumber":
-        return !value ? "Organisationsnummer krävs" : "";
-      case "companyName":
-        return !value ? "Företagsnamn krävs" : "";
-      case "password":
-        if (!value) return "Lösenord krävs";
-        return value.length < 6 ? "Lösenordet måste vara minst 6 tecken" : "";
-      case "confirmPassword":
-        if (!value) return "Bekräfta lösenord krävs";
-        return value !== formData.password ? "Lösenorden matchar inte" : "";
-      case "agreeToTerms":
-        return !value ? "Du måste godkänna villkoren" : "";
-      default:
-        return "";
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    const fieldValue = type === "checkbox" ? checked : value;
-
-    setFormData((prevState) => ({ ...prevState, [name]: fieldValue }));
-    if (touched[name]) {
-      setValidationErrors((prev: any) => ({
-        ...prev,
-        [name]: validateField(name, fieldValue),
-      }));
-    }
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setTouched((prev: any) => ({ ...prev, [name]: true }));
-    setValidationErrors((prev: any) => ({
+  const updateField = (
+    field: keyof FormData,
+    value: string | boolean
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [name]: validateField(name, value),
+      [field]: value,
     }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [field]: undefined,
+    }));
+
+    setServerError("");
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const validate = () => {
+    const newErrors: ValidationErrors = {};
+
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    ) {
+      newErrors.email = "Enter a valid email";
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9\s-]+$/.test(formData.phone)) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password =
+        "Password must be at least 6 characters";
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword =
+        "Please confirm your password";
+    } else if (
+      formData.password !== formData.confirmPassword
+    ) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = "Company name is required";
+    }
+
+    if (!formData.organizationNumber.trim()) {
+      newErrors.organizationNumber =
+        "Organization number is required";
+    }
+
+    if (!formData.agreeToTerms) {
+      newErrors.agreeToTerms =
+        "Please accept the terms and conditions";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
-    setError(null);
 
-    const errors: any = {};
-    Object.keys(formData).forEach((key) => {
-      const error = validateField(key, formData[key as keyof typeof formData]);
-      if (error) errors[key] = error;
-    });
+    if (!validate()) return;
 
-    setValidationErrors(errors);
-    setTouched({
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      password: true,
-      confirmPassword: true,
-      agreeToTerms: true,
-    });
+    setLoading(true);
+    setServerError("");
 
-    if (Object.keys(errors).length === 0) {
-      setIsLoading(true);
-      try {
-        await makePostRequest("auth/signup", {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password,
-          organization_number: formData.organizationNumber,
-          corp_name: formData.companyName,
-          street_address: "",
-          registered_city: "",
-          postal_code: "",
-          city: "",
-          company_email: "",
-          company_phone: "",
-          resourceId: "",
-        });
+    try {
+      const response = await makePostRequest("auth/signup", {
+        first_name: formData.firstName.trim(),
+        last_name: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        password: formData.password,
+        organization_number:
+          formData.organizationNumber.trim(),
+        corp_name: formData.companyName.trim(),
 
-        navigate("/login");
-      } catch (err: any) {
-        setError(
-          err.response?.data?.message || "An unexpected error occurred."
-        );
-      } finally {
-        setIsLoading(false);
-      }
+        // Existing backend fields
+        street_address: "",
+        registered_city: "",
+        postal_code: "",
+        city: "",
+        company_email: "",
+        company_phone: "",
+        resourceId: "",
+      });
+
+      console.log("Signup response:", response);
+
+      navigate("/login", {
+        replace: true,
+      });
+    } catch (error: any) {
+      console.error("Signup error:", error);
+
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        "Unable to create your account. Please try again.";
+
+      setServerError(message);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const inputClass = (hasError?: boolean) => `
+    h-[42px]
+    w-full
+    rounded-xl
+    border
+    px-3.5
+    text-[13px]
+    outline-none
+    transition-all
+    ${
+      hasError
+        ? "border-red-400 bg-red-50/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/10 dark:border-red-500/60 dark:bg-red-950/10"
+        : "border-slate-200 bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900/70 dark:focus:border-blue-500"
+    }
+    text-slate-900
+    placeholder:text-slate-400
+    dark:text-white
+    dark:placeholder:text-slate-500
+  `;
+
+  const labelClass =
+    "mb-1.5 block text-[11px] font-bold uppercase tracking-[0.04em] text-slate-600 dark:text-slate-300";
+
+  const errorClass =
+    "mt-1 text-[10px] font-medium text-red-500";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white py-10">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900">DealerPro</h1>
-        <p className="mt-2 text-md text-gray-500">
-          Skapa ditt konto för att komma igång
-        </p>
+    <div className="relative h-screen w-full overflow-hidden bg-[#f5f7fb] font-plus-jakarta dark:bg-[#060b14]">
+      {/* Theme */}
+      <ThemeToggle />
+
+      {/* Background decoration */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-32 -top-32 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+
+        <div className="absolute -bottom-32 -right-32 h-80 w-80 rounded-full bg-indigo-500/10 blur-3xl" />
+
+        <div className="absolute left-1/2 top-0 h-px w-[65%] -translate-x-1/2 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent" />
       </div>
 
-      <div className="w-full max-w-4xl p-8 mx-auto">
-        <div className="p-8 border border-gray-200 rounded-lg">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-            Företagsuppgifter
-          </h2>
+      {/* Main container */}
+      <div className="relative flex h-full w-full items-center justify-center p-3 sm:p-5 lg:p-6">
+        <div className="flex h-full max-h-[720px] w-full max-w-[1080px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_25px_70px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-[#0b1220] dark:shadow-black/40">
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3 mb-6">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+          {/* LEFT BRAND PANEL */}
+          <div className="relative hidden w-[38%] overflow-hidden bg-[#002147] lg:flex">
+            <div className="absolute -right-28 -top-28 h-72 w-72 rounded-full border border-white/[0.08]" />
+
+            <div className="absolute -bottom-32 -left-28 h-80 w-80 rounded-full border border-white/[0.08]" />
+
+            <div className="relative z-10 flex h-full w-full flex-col justify-between p-9">
               <div>
-                <h3 className="text-sm font-medium text-red-800">
-                  Signup failed
-                </h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              {/* Organization Number */}
-              <div>
-                <label
-                  htmlFor="organizationNumber"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Organisationsnummer  *
-                </label>
-                <input
-                  id="organizationNumber"
-                  name="organizationNumber"
-                  type="text"
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.organizationNumber &&
-                    validationErrors.organizationNumber
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.organizationNumber}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
-                {touched.organizationNumber &&
-                  validationErrors.organizationNumber && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {validationErrors.organizationNumber}
-                    </p>
-                  )}
-              </div>
-
-              {/* Company Name */}
-              <div>
-                <label
-                  htmlFor="companyName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Företagsnamn *
-                </label>
-                <input
-                  id="companyName"
-                  name="companyName"
-                  type="text"
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.companyName && validationErrors.companyName
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                />
-                {touched.companyName && validationErrors.companyName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {validationErrors.companyName}
-                  </p>
-                )}
-              </div>
-
-              {/* First Name */}
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Förnamn  *
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.firstName && validationErrors.firstName
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  // disabled={isLoading}
-                />
-                {touched.firstName && validationErrors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {validationErrors.firstName}
-                  </p>
-                )}
-              </div>
-
-              {/* Last Name */}
-              <div className="mt-5">
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Efternamn  *
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.lastName && validationErrors.lastName
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  // disabled={isLoading}
-                />
-                {touched.lastName && validationErrors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {validationErrors.lastName}
-                  </p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  E-postadress *
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.email && validationErrors.email
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  // disabled={isLoading}
-                />
-                {touched.email && validationErrors.email && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {validationErrors.email}
-                  </p>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Telefonnummer *
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.phone && validationErrors.phone
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.phone}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  // disabled={isLoading}
-                />
-                {touched.phone && validationErrors.phone && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {validationErrors.phone}
-                  </p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div className="relative">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Lösenord *
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type={passwordVisible ? "text" : "password"}
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.password && validationErrors.password
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  // disabled={isLoading}
-                />
                 <button
                   type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute bottom-9 right-0 flex items-center pr-3 text-gray-400"
+                  onClick={() => navigate("/")}
+                  className="mb-8 flex items-center gap-2 text-xs font-semibold text-blue-100/65 transition hover:text-white"
                 >
-                  {passwordVisible ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  <ArrowLeft size={15} />
+                  Back to website
                 </button>
-                {touched.password && validationErrors.password && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {validationErrors.password}
-                  </p>
-                )}
-              </div>
 
-              {/* Confirm Password */}
-              <div className="relative">
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Bekräfta lösenord *
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={confirmPasswordVisible ? "text" : "password"}
-                  required
-                  className={`w-full px-4 py-3 text-gray-900 bg-white border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
-                    touched.confirmPassword && validationErrors.confirmPassword
-                      ? "border-red-500"
-                      : "border-gray-200"
-                  }`}
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  // disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={toggleConfirmPasswordVisibility}
-                  className="absolute bottom-9 right-0 flex items-center pr-3 text-gray-400"
-                >
-                  {confirmPasswordVisible ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-                {touched.confirmPassword &&
-                  validationErrors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {validationErrors.confirmPassword}
-                    </p>
-                  )}
-              </div>
-            </div>
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-white/10">
+                  <CarFront
+                    size={22}
+                    className="text-white"
+                  />
+                </div>
 
-            {/* Terms and Conditions */}
-            <div className="mt-6">
-              <div className="flex items-center">
-                <input
-                  id="agreeToTerms"
-                  name="agreeToTerms"
-                  type="checkbox"
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  checked={formData.agreeToTerms}
-                  onChange={handleChange}
-                  // disabled={isLoading}
-                />
-                <label
-                  htmlFor="agreeToTerms"
-                  className="ml-2 block text-sm text-gray-900"
-                >
-                  Jag samtycker{" "}
-                  <a href="#" className="font-medium hover:underline">
-                    till användarvillkoren
-                  </a>
-                </label>
-              </div>
-              {touched.agreeToTerms && validationErrors.agreeToTerms && (
-                <p className="mt-1 text-sm text-red-600">
-                  {validationErrors.agreeToTerms}
+                <h1 className="max-w-xs text-[30px] font-extrabold leading-[1.15] tracking-tight text-white">
+                  Grow your dealership with DealerPro.
+                </h1>
+
+                <p className="mt-4 max-w-xs text-[13px] leading-6 text-blue-100/65">
+                  Manage vehicles, customers, agreements,
+                  payments and invoices from one powerful
+                  platform.
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* Submit Button */}
-            <div className="mt-8">
+              <div>
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
+                    <ShieldCheck
+                      size={17}
+                      className="text-blue-200"
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-white">
+                      Secure & reliable
+                    </p>
+
+                    <p className="mt-0.5 text-[10px] text-blue-100/45">
+                      Built for modern dealerships.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-px w-full bg-white/10" />
+
+                <p className="mt-4 text-[10px] text-blue-100/35">
+                  © {new Date().getFullYear()} DealerPro
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+
+            {/* Mobile Header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800 lg:hidden">
               <button
-                type="submit"
-                className="w-full flex justify-center items-center px-4 py-3.5 font-semibold text-white bg-[#002147] rounded-md hover:bg-[#001a38] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 cursor-pointer"
+                type="button"
+                onClick={() => navigate("/")}
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                    <span>Skapa konto...</span>
-                  </>
-                ) : (
-                  "Skapa konto"
-                )}
+                <ArrowLeft size={15} />
+                Back
               </button>
-            </div>
-          </form>
-        </div>
 
-        <p className="mt-8 text-sm text-center text-gray-500">
-          Har du redan ett konto?{" "}
-          <a
-            href="/login"
-            className="font-medium text-black hover:underline"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("/login");
-            }}
-          >
-             Logga in
-          </a>
-        </p>
+              <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900 dark:text-white">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#002147] text-white">
+                  <CarFront size={14} />
+                </div>
+
+                DealerPro
+              </div>
+            </div>
+
+            {/* Form */}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="flex min-h-full items-center justify-center px-5 py-6 sm:px-8 lg:px-10">
+                <div className="w-full max-w-[600px]">
+
+                  {/* Heading */}
+                  <div className="mb-5">
+                    <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
+                      DealerPro Account
+                    </p>
+
+                    <h2 className="text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-white">
+                      Create your account
+                    </h2>
+
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Set up your dealership account in a few
+                      simple steps.
+                    </p>
+                  </div>
+
+                  {/* Server Error */}
+                  {serverError && (
+                    <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
+                      <AlertCircle
+                        size={16}
+                        className="mt-0.5 shrink-0"
+                      />
+
+                      <span>{serverError}</span>
+                    </div>
+                  )}
+
+                  <form
+                    onSubmit={handleSubmit}
+                    className="space-y-3.5"
+                  >
+
+                    {/* NAME */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                      {/* First Name */}
+                      <div>
+                        <label className={labelClass}>
+                          First name
+                        </label>
+
+                        <input
+                          type="text"
+                          value={formData.firstName}
+                          onChange={(e) =>
+                            updateField(
+                              "firstName",
+                              e.target.value
+                            )
+                          }
+                          placeholder="John"
+                          autoComplete="given-name"
+                          className={inputClass(
+                            !!errors.firstName
+                          )}
+                        />
+
+                        {errors.firstName && (
+                          <p className={errorClass}>
+                            {errors.firstName}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Last Name */}
+                      <div>
+                        <label className={labelClass}>
+                          Last name
+                        </label>
+
+                        <input
+                          type="text"
+                          value={formData.lastName}
+                          onChange={(e) =>
+                            updateField(
+                              "lastName",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Doe"
+                          autoComplete="family-name"
+                          className={inputClass(
+                            !!errors.lastName
+                          )}
+                        />
+
+                        {errors.lastName && (
+                          <p className={errorClass}>
+                            {errors.lastName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* CONTACT */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                      {/* Email */}
+                      <div>
+                        <label className={labelClass}>
+                          Email address
+                        </label>
+
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) =>
+                            updateField(
+                              "email",
+                              e.target.value
+                            )
+                          }
+                          placeholder="john@company.com"
+                          autoComplete="email"
+                          className={inputClass(
+                            !!errors.email
+                          )}
+                        />
+
+                        {errors.email && (
+                          <p className={errorClass}>
+                            {errors.email}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Phone */}
+                      <div>
+                        <label className={labelClass}>
+                          Phone number
+                        </label>
+
+                        <input
+                          type="tel"
+                          value={formData.phone}
+                          onChange={(e) =>
+                            updateField(
+                              "phone",
+                              e.target.value
+                            )
+                          }
+                          placeholder="+46 70 123 45 67"
+                          autoComplete="tel"
+                          className={inputClass(
+                            !!errors.phone
+                          )}
+                        />
+
+                        {errors.phone && (
+                          <p className={errorClass}>
+                            {errors.phone}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* COMPANY */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                      {/* Company */}
+                      <div>
+                        <label className={labelClass}>
+                          Company name
+                        </label>
+
+                        <input
+                          type="text"
+                          value={formData.companyName}
+                          onChange={(e) =>
+                            updateField(
+                              "companyName",
+                              e.target.value
+                            )
+                          }
+                          placeholder="DealerPro Motors"
+                          autoComplete="organization"
+                          className={inputClass(
+                            !!errors.companyName
+                          )}
+                        />
+
+                        {errors.companyName && (
+                          <p className={errorClass}>
+                            {errors.companyName}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Organization */}
+                      <div>
+                        <label className={labelClass}>
+                          Organization number
+                        </label>
+
+                        <input
+                          type="text"
+                          value={
+                            formData.organizationNumber
+                          }
+                          onChange={(e) =>
+                            updateField(
+                              "organizationNumber",
+                              e.target.value
+                            )
+                          }
+                          placeholder="556123-4567"
+                          className={inputClass(
+                            !!errors.organizationNumber
+                          )}
+                        />
+
+                        {errors.organizationNumber && (
+                          <p className={errorClass}>
+                            {errors.organizationNumber}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* PASSWORD */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+                      {/* Password */}
+                      <div>
+                        <label className={labelClass}>
+                          Password
+                        </label>
+
+                        <div className="relative">
+                          <input
+                            type={
+                              showPassword
+                                ? "text"
+                                : "password"
+                            }
+                            value={formData.password}
+                            onChange={(e) =>
+                              updateField(
+                                "password",
+                                e.target.value
+                              )
+                            }
+                            placeholder="••••••••"
+                            autoComplete="new-password"
+                            className={`${inputClass(
+                              !!errors.password
+                            )} pr-10`}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowPassword(
+                                (prev) => !prev
+                              )
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700 dark:hover:text-white"
+                            aria-label={
+                              showPassword
+                                ? "Hide password"
+                                : "Show password"
+                            }
+                          >
+                            {showPassword ? (
+                              <EyeOff size={16} />
+                            ) : (
+                              <Eye size={16} />
+                            )}
+                          </button>
+                        </div>
+
+                        {errors.password && (
+                          <p className={errorClass}>
+                            {errors.password}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div>
+                        <label className={labelClass}>
+                          Confirm password
+                        </label>
+
+                        <div className="relative">
+                          <input
+                            type={
+                              showConfirmPassword
+                                ? "text"
+                                : "password"
+                            }
+                            value={
+                              formData.confirmPassword
+                            }
+                            onChange={(e) =>
+                              updateField(
+                                "confirmPassword",
+                                e.target.value
+                              )
+                            }
+                            placeholder="••••••••"
+                            autoComplete="new-password"
+                            className={`${inputClass(
+                              !!errors.confirmPassword
+                            )} pr-10`}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmPassword(
+                                (prev) => !prev
+                              )
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700 dark:hover:text-white"
+                            aria-label={
+                              showConfirmPassword
+                                ? "Hide confirm password"
+                                : "Show confirm password"
+                            }
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff size={16} />
+                            ) : (
+                              <Eye size={16} />
+                            )}
+                          </button>
+                        </div>
+
+                        {errors.confirmPassword && (
+                          <p className={errorClass}>
+                            {errors.confirmPassword}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* TERMS */}
+                    <div className="pt-0.5">
+                      <label className="flex cursor-pointer items-start gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.agreeToTerms}
+                          onChange={(e) =>
+                            updateField(
+                              "agreeToTerms",
+                              e.target.checked
+                            )
+                          }
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+
+                        <span className="text-[11px] leading-4.5 text-slate-500 dark:text-slate-400">
+                          I agree to the{" "}
+                          <span className="font-bold text-blue-600 dark:text-blue-400">
+                            Terms & Conditions
+                          </span>{" "}
+                          and{" "}
+                          <span className="font-bold text-blue-600 dark:text-blue-400">
+                            Privacy Policy
+                          </span>
+                          .
+                        </span>
+                      </label>
+
+                      {errors.agreeToTerms && (
+                        <p className={errorClass}>
+                          {errors.agreeToTerms}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* BUTTON */}
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex h-[43px] w-full items-center justify-center gap-2 rounded-xl bg-[#002147] text-xs font-bold text-white shadow-lg shadow-blue-950/15 transition-all hover:bg-[#00305f] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-500"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2
+                            size={16}
+                            className="animate-spin"
+                          />
+                          Creating account...
+                        </>
+                      ) : (
+                        "Create account"
+                      )}
+                    </button>
+                  </form>
+
+                  {/* LOGIN */}
+                  <p className="mt-4 text-center text-[11px] text-slate-500 dark:text-slate-400">
+                    Already have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => navigate("/login")}
+                      className="font-bold text-blue-600 transition hover:text-blue-700 hover:underline dark:text-blue-400"
+                    >
+                      Sign in
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Prevent outer browser scrollbar */}
+      <style>{`
+        html,
+        body,
+        #root {
+          height: 100%;
+          margin: 0;
+        }
+
+        body {
+          overflow: hidden;
+        }
+
+        * {
+          scrollbar-width: none;
+        }
+
+        *::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+      `}</style>
     </div>
   );
 };

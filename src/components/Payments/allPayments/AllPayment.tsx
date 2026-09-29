@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PaymentsTable from "../paymentsTable/PaymentsTable";
 import FilterPayments, {
@@ -19,7 +19,8 @@ const AllPayment = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showFilterModal, setShowFilterModal] = useState(false);
-  const [filters, setFilters] = useState<PaymentFilters>(initialFilterState);
+  const [filters, setFilters] =
+    useState<PaymentFilters>(initialFilterState);
   const [filteredCount, setFilteredCount] = useState(0);
 
   const navigate = useNavigate();
@@ -37,63 +38,177 @@ const AllPayment = () => {
     Object.values(filters).some((value) => value !== "") || search !== "";
 
   return (
-    <div className="bg-white rounded-2xl p-6 mt-4 font-sans dashboard-cards font-plus-jakarta">
-      <div className="flex lg:flex-row flex-col justify-between lg:items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Betalningar</h2>
-        <div className="flex sm:flex-row flex-col gap-3 sm:items-center lg:mt-0 mt-4">
-          <div className="relative w-fit">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
-            </div>
+    <div
+      className="
+        w-full
+        rounded-2xl
+        p-4 sm:p-5 lg:p-6
+        mt-4
+        font-sans
+        font-plus-jakarta
+        bg-white dark:bg-[#0f172a]
+        border border-gray-100 dark:border-slate-800
+        shadow-sm
+        transition-colors duration-200
+      "
+    >
+      {/* HEADER */}
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
+            Payments
+          </h2>
+
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+            Manage and view all payments
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          {/* SEARCH */}
+          <div className="relative w-full sm:w-64 lg:w-72">
+            <Search
+              className="
+                absolute left-3 top-1/2 -translate-y-1/2
+                w-4 h-4
+                text-gray-400 dark:text-slate-500
+              "
+            />
+
             <input
               type="text"
-              placeholder="Söka"
-              className="w-64 pl-10 pr-12 py-2.5 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+              placeholder="Search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              className="
+                w-full
+                pl-10 pr-4
+                py-2.5
+                rounded-lg
+                text-sm
+                outline-none
+                transition
+                bg-gray-50 dark:bg-slate-900
+                border border-gray-200 dark:border-slate-700
+                text-gray-900 dark:text-white
+                placeholder-gray-400 dark:placeholder-slate-500
+                focus:ring-2
+                focus:ring-blue-500/30
+                focus:border-blue-500
+              "
             />
           </div>
+
+          {/* FILTER */}
           <button
-            className={`relative flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md ${
-              isFiltersApplied
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-            }`}
+            type="button"
             onClick={() => setShowFilterModal(true)}
-            title="Filter agreements"
+            className={`
+              relative
+              flex items-center justify-center gap-2
+              px-4 py-2.5
+              rounded-lg
+              text-sm
+              font-medium
+              transition-all
+              cursor-pointer
+              ${
+                isFiltersApplied
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : `
+                    bg-white dark:bg-slate-900
+                    text-blue-600 dark:text-blue-400
+                    border border-blue-200 dark:border-blue-800
+                    hover:bg-blue-50 dark:hover:bg-blue-950/40
+                  `
+              }
+            `}
           >
-            <Filter className="h-4 w-4" />
-            <span>Filtrera</span>
+            <Filter className="w-4 h-4" />
+
+            <span>Filter</span>
+
             {isFiltersApplied && (
-              <div className="flex items-center justify-center w-5 h-5 bg-white bg-opacity-20 rounded-full text-xs font-semibold">
+              <span
+                className="
+                  flex items-center justify-center
+                  min-w-5 h-5
+                  px-1
+                  rounded-full
+                  bg-white/20
+                  text-xs
+                  font-semibold
+                "
+              >
                 {filteredCount}
-              </div>
+              </span>
             )}
           </button>
+
+          {/* ADD PAYMENT */}
           <button
-            className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors w-fit"
+            type="button"
             onClick={() => navigate("/add-new-payment")}
+            className="
+              bg-blue-600
+              hover:bg-blue-700
+              text-white
+              px-4 py-2.5
+              rounded-lg
+              text-sm
+              font-medium
+              flex items-center justify-center gap-2
+              transition-colors
+              cursor-pointer
+              whitespace-nowrap
+            "
           >
-            <span className="text-lg leading-none mb-1">+</span>
-            Ny betalning
+            <Plus className="w-4 h-4" />
+
+            <span>New Payment</span>
           </button>
         </div>
       </div>
 
+      {/* FILTER STATUS */}
       {isFiltersApplied && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-3 mb-6 flex items-center justify-between text-sm">
+        <div
+          className="
+            bg-blue-50 dark:bg-blue-950/30
+            border border-blue-200 dark:border-blue-900
+            text-blue-800 dark:text-blue-300
+            rounded-lg
+            px-4 py-3
+            mb-6
+            flex flex-col sm:flex-row
+            sm:items-center
+            sm:justify-between
+            gap-2
+            text-sm
+          "
+        >
           <span>
-            Visande <strong>{filteredCount}</strong> filtrerade betalningar
+            Showing{" "}
+            <strong>{filteredCount}</strong>{" "}
+            filtered payments
           </span>
+
           <button
+            type="button"
             onClick={handleClearFilters}
-            className="font-semibold hover:underline cursor-pointer"
+            className="
+              font-semibold
+              hover:underline
+              cursor-pointer
+              text-left sm:text-right
+            "
           >
-            Rensa filter
+            Clear filters
           </button>
         </div>
       )}
 
+      {/* TABLE */}
       <PaymentsTable
         search={search}
         expandedId={expandedId}
@@ -101,6 +216,8 @@ const AllPayment = () => {
         filters={filters}
         setFilteredCount={setFilteredCount}
       />
+
+      {/* FILTER MODAL */}
       <FilterPayments
         open={showFilterModal}
         onClose={() => setShowFilterModal(false)}

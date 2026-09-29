@@ -108,9 +108,9 @@ interface AgreementsTableProps {
 }
 
 const statusColors: Record<string, string> = {
-  Created: "bg-yellow-100 text-yellow-700",
-  Signed: "bg-green-100 text-green-700",
-  Pending: "bg-yellow-100 text-yellow-700",
+  Created: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+  Signed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+  Pending: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
 };
 
 // Move EmailModal here, before AgreementsTable
@@ -122,19 +122,19 @@ const EmailModal: React.FC<{
   const [email, setEmail] = useState("");
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] max-w-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6 w-[calc(100%-2rem)] max-w-md">
         <h2 className="text-lg font-semibold mb-4">Skicka e-post</h2>
         <input
           type="email"
-          className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+          className="w-full border border-slate-300 dark:border-slate-700 rounded px-3 py-2 mb-4"
           placeholder="Ange e-postadress"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <div className="flex justify-end gap-2">
           <button
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+            className="px-4 py-2 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
             onClick={onClose}
           >
             Close
@@ -159,10 +159,6 @@ const PDFPreview: React.FC<{
   agreement: any;
 }> = ({ agreement }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-
-  console.log("______________test_________________________")
-  console.log(agreement)
-  console.log("______________test_________________________")
 
   const handleDownloadPDF = async () => {
     if (!agreement) {
@@ -207,11 +203,11 @@ const PDFPreview: React.FC<{
   };
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-blue-600" />
-          <span className="font-medium text-gray-800">Agreement PDFs</span>
+          <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 dark:text-blue-300" />
+          <span className="font-medium text-slate-800 dark:text-slate-100">Agreement PDFs</span>
         </div>
         <button
           onClick={handleDownloadPDF}
@@ -232,19 +228,19 @@ const PDFPreview: React.FC<{
         </button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
         <div className="h-48 bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <FileText className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 mb-1">Avtal #{agreement.id}</p>
-            <p className="text-xs text-gray-500">
+            <FileText className="w-12 h-12 text-blue-400 dark:text-blue-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">Avtal #{agreement.id}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {agreement.registrationNumber || "N/A"}
             </p>
-            <p className="text-xs text-gray-500">{agreement.type || "N/A"}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{agreement.type || "N/A"}</p>
           </div>
         </div>
-        <div className="p-3 bg-white border-t border-gray-100">
-          <div className="flex justify-between items-center text-xs text-gray-500">
+        <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
             <span>PDF-dokument</span>
             <span>
               {new Date(agreement.createdAt || Date.now()).toLocaleDateString()}
@@ -600,31 +596,31 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
         }}
         onSend={handleSendEmail}
       />
-      <div className="overflow-hidden rounded-lg border border-gray-200 font-plus-jakarta max-h-[500px] min-h-[500px] overflow-y-auto overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-[#F0F7FF] sticky top-0 z-10">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 font-plus-jakarta shadow-sm max-h-[min(620px,calc(100vh-220px))] min-h-[360px] sm:min-h-[500px] overflow-y-auto overflow-x-auto">
+        <table className="min-w-[760px] w-full">
+          <thead className="bg-[#F0F7FF] dark:bg-slate-800 sticky top-0 z-10">
             <tr>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
+              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-slate-700 dark:text-slate-200">
                 Registreringsnummer
               </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
+              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-slate-700 dark:text-slate-200">
                 Bil
               </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
+              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-slate-700 dark:text-slate-200">
                 Typ
               </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
+              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-slate-700 dark:text-slate-200">
                 Datum
               </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
+              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-slate-700 dark:text-slate-200">
                 Status
               </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
+              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-slate-700 dark:text-slate-200">
                 Åtgärder
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
             {isLoading ? (
               <tr>
                 <td colSpan={6} className="py-6 text-center">
@@ -635,13 +631,13 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-red-500">
+                <td colSpan={6} className="py-6 text-center text-red-500 dark:text-red-400">
                   {error}
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-gray-500">
+                <td colSpan={6} className="py-6 text-center text-slate-500 dark:text-slate-400">
                   Inga avtal hittades
                 </td>
               </tr>
@@ -653,7 +649,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                     <React.Fragment key={agreement.id}>
                       {/* Main Agreement Row */}
                       <tr
-                        className={`hover:bg-gray-50 ${
+                        className={`hover:bg-slate-50 dark:bg-slate-950 ${
                           expandedId === agreement.id.toString()
                             ? "bg-[#E9EEF640]"
                             : ""
@@ -664,10 +660,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => handleExpand(agreement.id)}
-                              className="flex items-center justify-center w-6 h-6 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                              className="flex items-center justify-center w-6 h-6 hover:bg-slate-200 dark:bg-slate-700 rounded transition-colors cursor-pointer"
                             >
                               <span
-                                className={`text-gray-400 text-xs transition-transform ${
+                                className={`text-slate-400 dark:text-slate-500 text-xs transition-transform ${
                                   expandedId === agreement.id.toString()
                                     ? "rotate-180"
                                     : ""
@@ -686,7 +682,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                   ? "A"
                                   : ".."}
                               </span>
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-slate-900 dark:text-white">
                                 {(
                                   agreement.registrationNumber || "N/A"
                                 ).toUpperCase()}
@@ -694,13 +690,13 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                             </span>
                           </div>
                         </td>
-                        <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
+                        <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-slate-700 dark:text-slate-200">
                           {agreement.vehicleModel || "N/A"}
                         </td>
-                        <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
+                        <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-slate-700 dark:text-slate-200">
                           {agreement.type || "N/A"}
                         </td>
-                        <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
+                        <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-slate-700 dark:text-slate-200">
                           {new Date(
                             agreement.purchaseDate || agreement.salesDate || ""
                           ).toLocaleDateString("en-US", {
@@ -717,7 +713,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                 agreement.creditMarking === "Yes"
                                   ? "Created"
                                   : "Signed"
-                              ] || "bg-gray-100 text-gray-700"
+                              ] || "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
                             }`}
                           >
                             {agreement.creditMarking === "Yes"
@@ -727,7 +723,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                         </td>
                         <td className="md:py-4 py-1.5 md:px-4 px-2">
                           <button
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-md transition-colors cursor-pointer"
+                            className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:bg-red-950/30 p-2 rounded-md transition-colors cursor-pointer"
                             onClick={() =>
                               setDeletePopupId(agreement.id.toString())
                             }
@@ -742,16 +738,16 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                         <tr>
                           <td
                             colSpan={7}
-                            className="bg-[#E9EEF640] border-t border-gray-200"
+                            className="bg-slate-50/80 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800"
                           >
-                            <div className="p-6">
-                              <div className="flex flex-col gap-6">
-                                <div className="flex justify-end items-center gap-3 mt-4">
+                            <div className="p-4 sm:p-6">
+                              <div className="flex flex-col gap-4 sm:p-6">
+                                <div className="flex flex-wrap justify-end items-center gap-2 sm:gap-3 mt-2 sm:mt-4">
                                   <button
                                     onClick={() =>
                                       handleEditAgreement(agreement)
                                     }
-                                    className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                                    className="px-3 sm:px-4 py-2 text-[#012F7A] dark:text-blue-300 border border-blue-600/70 dark:border-blue-500/60 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:bg-blue-950/40 flex items-center gap-2 cursor-pointer"
                                   >
                                     <EditAgreementIcon />
                                     Redigera
@@ -759,7 +755,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                   <button
                                     onClick={() => handleDownloadPDF(agreement)}
                                     disabled={isGeneratingPDF}
-                                    className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-3 sm:px-4 py-2 text-[#012F7A] dark:text-blue-300 border border-blue-600/70 dark:border-blue-500/60 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:bg-blue-950/40 flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     <ViewAgreementIcon />
                                     {isGeneratingPDF
@@ -771,13 +767,13 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                       setCurrentAgreement(agreement);
                                       setShowEmailModal(true);
                                     }}
-                                    className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                                    className="px-3 sm:px-4 py-2 text-[#012F7A] dark:text-blue-300 border border-blue-600/70 dark:border-blue-500/60 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 hover:bg-blue-50 dark:hover:bg-blue-950/50 dark:bg-blue-950/40 flex items-center gap-2 cursor-pointer"
                                   >
                                     <EnvelopeAgreementIcon />
                                     E-post
                                   </button>
                                   <button
-                                    className="px-4 py-2 text-white bg-[#012F7A] rounded-lg hover:bg-[#012F7A]/90 flex items-center gap-2 cursor-pointer"
+                                    className="px-3 sm:px-4 py-2 text-white bg-[#012F7A] rounded-xl hover:bg-[#012F7A]/90 flex items-center gap-2 cursor-pointer"
                                     onClick={() =>
                                       navigate(
                                         generateRegularSigningLink(agreement.id)
@@ -792,17 +788,17 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                 {agreement.type === "Sales Agreement" && (
                                   <>
                                     {/* Vehicle Information Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Fordonsinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.registrationNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Registreringsnummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {(
                                                 agreement.registrationNumber ||
                                                 "N/A"
@@ -812,70 +808,70 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.vehicleModel && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bilmodell
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vehicleModel || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.color && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Färg
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.color || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.chassisNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Chassinummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.chassisNumber || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.vehicleYear && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Fordonsår
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vehicleYear || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.gearbox && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Växellåda
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.gearbox || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.fuelType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bränsletyp
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.fuelType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.salesDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäljningsdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.salesDate || "N/A"}
                                             </div>
                                           </div>
@@ -884,9 +880,9 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Customer Details Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <div className="bg-[#F0F7FF] px-6 py-4 flex justify-between">
-                                        <h3 className="text-base font-semibold text-gray-900">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <div className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex justify-between">
+                                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                                           Kunduppgifter
                                         </h3>
                                         {agreement?.customerType && (
@@ -905,59 +901,59 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           </span>
                                         )}
                                       </div>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.name && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               {agreement.customerType ===
                                               "company"
                                                 ? "Företagsnamn"
                                                 : "Namn"}
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.name || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.email && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               E-post
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.email || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.phone && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Telefon
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.phone || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.address && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Adress
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.address || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.socialSecurityNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               {agreement.customerType ===
                                               "company"
                                                 ? "Organisationsnummer"
                                                 : "Personnummer"}
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.socialSecurityNumber ||
                                                 "N/A"}
                                             </div>
@@ -965,10 +961,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.organizationNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Organisationsnummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.organizationNumber ||
                                                 "N/A"}
                                             </div>
@@ -976,40 +972,40 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.birthDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Födelsedatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.birthDate || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.gender && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kön
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.gender || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.pep && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               PEP
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.pep ? "Ja" : "Nej"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.verification && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Verifiering
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.verification || "N/A"}
                                             </div>
                                           </div>
@@ -1019,17 +1015,17 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
 
                                     {/* Trade-in Vehicle Information */}
                                     {agreement?.tradeInRegistrationNumber && (
-                                      <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                        <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                      <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                        <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                           Inbytesfordonsinformation
                                         </h3>
-                                        <div className="p-6 grid grid-cols-2 gap-6">
+                                        <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                           {agreement?.tradeInRegistrationNumber && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Registreringsnummer
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {(
                                                   agreement.tradeInRegistrationNumber ||
                                                   "N/A"
@@ -1039,10 +1035,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.tradeInPurchaseDate && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Inköpsdatum
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.tradeInPurchaseDate ||
                                                   "N/A"}
                                               </div>
@@ -1050,10 +1046,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.tradeInPurchasePrice && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Inköpspris
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.tradeInPurchasePrice ||
                                                   "N/A"}
                                               </div>
@@ -1061,10 +1057,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.tradeInMileage && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Miltal
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.tradeInMileage ||
                                                   "N/A"}
                                               </div>
@@ -1072,10 +1068,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.tradeInCreditMaking && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Kreditmarkering
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.tradeInCreditMaking ||
                                                   "N/A"}
                                               </div>
@@ -1083,10 +1079,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.tradeInRestAmount && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Restbelopp
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.tradeInRestAmount ||
                                                   "N/A"}
                                               </div>
@@ -1097,37 +1093,37 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     )}
 
                                     {/* Sales Information Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Försäljningsinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.salesPriceSEK && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäljningspris (SEK)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.salesPriceSEK || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.paymentMethod && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Betalningsmetod
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.paymentMethod || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.paymentDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Betalningsdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {new Date(
                                                 agreement.paymentDate
                                               ).toLocaleDateString() || "N/A"}
@@ -1136,10 +1132,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.financialCompany && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Finansiellt företag
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.financialCompany ||
                                                 "N/A"}
                                             </div>
@@ -1147,10 +1143,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.creditAmountSales && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kreditbelopp Försäljning
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.creditAmountSales ||
                                                 "N/A"}
                                             </div>
@@ -1158,20 +1154,20 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.cashStack && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kontantinsats
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.cashStack || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.loanPeriod && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Låneperiod
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.loanPeriod || "N/A"}
                                             </div>
                                           </div>
@@ -1180,77 +1176,77 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Vehicle Specifications Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Fordonsspecifikationer
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.vatType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Moms typ
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vatType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.mileage && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Miltal (km)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.mileage || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.numberOfKeys && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Nycklar
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.numberOfKeys || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.deck && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Däck
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.deck || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.insurer && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäkringsbolag
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.insurer || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.insuranceType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäkringstyp
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.insuranceType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.warrantyProvider && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Garantiutfärdare
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.warrantyProvider ||
                                                 "N/A"}
                                             </div>
@@ -1258,10 +1254,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.warrantyProduct && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Garantiprodukt
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.warrantyProduct ||
                                                 "N/A"}
                                             </div>
@@ -1269,10 +1265,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.latestServiceDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Senaste service
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.latestServiceDate ||
                                                 "N/A"}
                                             </div>
@@ -1282,27 +1278,27 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Delivery Information Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Leveransinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.deliveryDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Leveransdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.deliveryDate || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.deliveryLocation && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Leveransplats
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.deliveryLocation ||
                                                 "N/A"}
                                             </div>
@@ -1310,10 +1306,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.deliveryTerms && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Leveransvillkor
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.deliveryTerms || "N/A"}
                                             </div>
                                           </div>
@@ -1323,16 +1319,16 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
 
                                     {/* Payment Information Section */}
                                     {agreement?.freeTextMessage && (
-                                      <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                        <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                      <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                        <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                           Betalningsinformation
                                         </h3>
-                                        <div className="p-6 grid grid-cols-2 gap-6">
+                                        <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Meddelande (Betalning)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.freeTextMessage ||
                                                 "N/A"}
                                             </div>
@@ -1347,17 +1343,17 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                 {agreement.type === "Agency Agreement" && (
                                   <>
                                     {/* Vehicle Information Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Fordonsinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.registrationNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Registreringsnummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {(
                                                 agreement.registrationNumber ||
                                                 "N/A"
@@ -1367,110 +1363,110 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.vehicleModel && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bilmodell
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vehicleModel || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.color && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Färg
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.color || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.chassisNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Chassinummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.chassisNumber || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.vehicleYear && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Fordonsår
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vehicleYear || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.gearbox && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Växellåda
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.gearbox || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.fuelType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bränsletyp
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.fuelType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.mileage && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Miltal (km)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.mileage || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.numberOfKeys && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Nycklar
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.numberOfKeys || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.deck && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Däck
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.deck || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.latestService && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Senaste service
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.latestService || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.vatType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Moms typ
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vatType || "N/A"}
                                             </div>
                                           </div>
@@ -1479,9 +1475,9 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Customer Details Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
                                       <div className="flex items-center justify-between mb-4">
-                                        <h3 className="text-base font-semibold text-gray-900">
+                                        <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                                           Kunduppgifter
                                         </h3>
                                         {agreement?.customerType && (
@@ -1500,59 +1496,59 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           </span>
                                         )}
                                       </div>
-                                      <div className="grid grid-cols-4 gap-6">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.name && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               {agreement.customerType ===
                                               "company"
                                                 ? "Företagsnamn"
                                                 : "Namn"}
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.name || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.email && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               E-post
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.email || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.phone && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Telefon
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.phone || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.address && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Adress
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.address || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.socialSecurityNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               {agreement.customerType ===
                                               "company"
                                                 ? "Organisationsnummer"
                                                 : "Personnummer"}
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.socialSecurityNumber ||
                                                 "N/A"}
                                             </div>
@@ -1560,10 +1556,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.organizationNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Organisationsnummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.organizationNumber ||
                                                 "N/A"}
                                             </div>
@@ -1574,26 +1570,26 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
 
                                     {/* Agency Information Section */}
                                     <div className="mb-6">
-                                      <h3 className="text-base font-semibold text-gray-900 mb-4">
+                                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
                                         Byråinformation
                                       </h3>
-                                      <div className="grid grid-cols-4 gap-6">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.purchasePrice && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäljningspris (SEK)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.purchasePrice || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.commissionRate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Provision
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.commissionRate ||
                                                 "N/A"}
                                             </div>
@@ -1601,10 +1597,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.commissionAmount && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Provisionsbelopp (SEK)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.commissionAmount ||
                                                 "N/A"}
                                             </div>
@@ -1612,50 +1608,50 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.agencyFee && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Byråavgift (SEK)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.agencyFee || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.paymentMethod && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Betalningsmetod
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.paymentMethod || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.bank && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bank
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.bank || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.accountNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kontonummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.accountNumber || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.settlementDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Avräkningsdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {new Date(
                                                 agreement.settlementDate
                                               ).toLocaleDateString() || "N/A"}
@@ -1667,36 +1663,36 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
 
                                     {/* Insurance & Warranty Information */}
                                     <div className="mb-6">
-                                      <h3 className="text-base font-semibold text-gray-900 mb-4">
+                                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
                                         Försäkrings- & garantinformation
                                       </h3>
-                                      <div className="grid grid-cols-4 gap-6">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.insurer && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäkringsbolag
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.insurer || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.insuranceType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäkringstyp
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.insuranceType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.warrantyProvider && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Garantiutfärdare
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.warrantyProvider ||
                                                 "N/A"}
                                             </div>
@@ -1704,10 +1700,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.warrantyProduct && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Garantiprodukt
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.warrantyProduct ||
                                                 "N/A"}
                                             </div>
@@ -1719,15 +1715,15 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     {/* Additional Notes */}
                                     {agreement?.notes && (
                                       <div className="mb-6">
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4">
+                                        <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
                                           Ytterligare anteckningar
                                         </h3>
-                                        <div className="grid grid-cols-1 gap-6">
+                                        <div className="grid grid-cols-1 gap-4 sm:p-6">
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Anteckningar
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.notes || "N/A"}
                                             </div>
                                           </div>
@@ -1741,17 +1737,17 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                 {agreement.type === "Purchase Agreement" && (
                                   <>
                                     {/* Vehicle Information Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Fordonsinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.registrationNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Registreringsnummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {(
                                                 agreement.registrationNumber ||
                                                 "N/A"
@@ -1761,110 +1757,110 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.vehicleModel && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bilmodell
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vehicleModel || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.color && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Färg
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.color || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.chassisNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Chassinummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.chassisNumber || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.vehicleYear && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Fordonsår
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vehicleYear || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.gearbox && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Växellåda
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.gearbox || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.fuelType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bränsletyp
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.fuelType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.mileage && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Miltal (km)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.mileage || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.numberOfKeys && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Nycklar
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.numberOfKeys || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.deck && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Däck
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.deck || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.vatType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Moms typ
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.vatType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.purchaseDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Inköpsdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.purchaseDate || "N/A"}
                                             </div>
                                           </div>
@@ -1873,8 +1869,8 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Customer Details Section */}
-                                    <div className="mb-6  bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <div className="bg-[#F0F7FF] px-6 py-4 flex justify-between">
+                                    <div className="mb-6  bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <div className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex justify-between">
                                         <h3 className="">Kunduppgifter</h3>
                                         {agreement?.customerType && (
                                           <span
@@ -1892,59 +1888,59 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           </span>
                                         )}
                                       </div>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.name && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               {agreement.customerType ===
                                               "company"
                                                 ? "Företagsnamn"
                                                 : "Namn"}
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.name || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.email && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               E-post
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.email || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.phone && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Telefon
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.phone || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.address && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Adress
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.address || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.socialSecurityNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               {agreement.customerType ===
                                               "company"
                                                 ? "Organisationsnummer"
                                                 : "Personnummer"}
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.socialSecurityNumber ||
                                                 "N/A"}
                                             </div>
@@ -1952,10 +1948,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.organizationNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Organisationsnummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.organizationNumber ||
                                                 "N/A"}
                                             </div>
@@ -1965,97 +1961,97 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Purchase Information Section */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Köpinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.purchasePrice && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Köpesumma (SEK)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.purchasePrice || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.paymentMethod && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Betalningsmetod
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.paymentMethod || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.creditMarking && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kreditmarkering
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.creditMarking || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.creditor && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kreditgivares namn
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.creditor || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.creditAmount && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kreditbelopp (SEK)
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.creditAmount || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.depositor && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Insättare
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.depositor || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.bank && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Bank
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.bank || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.accountNumber && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Kontonummer
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.accountNumber || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.settlementDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Avräkningsdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {new Date(
                                                 agreement.settlementDate
                                               ).toLocaleDateString() || "N/A"}
@@ -2064,10 +2060,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.payoutDate && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Utbetalningsdatum
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {new Date(
                                                 agreement.payoutDate
                                               ).toLocaleDateString() || "N/A"}
@@ -2078,37 +2074,37 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     </div>
 
                                     {/* Insurance & Warranty Information */}
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Försäkrings- & garantinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         {agreement?.insurer && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäkringsbolag
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.insurer || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.insuranceType && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Försäkringstyp
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.insuranceType || "N/A"}
                                             </div>
                                           </div>
                                         )}
                                         {agreement?.warrantyProvider && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Garantiutfärdare
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.warrantyProvider ||
                                                 "N/A"}
                                             </div>
@@ -2116,10 +2112,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                         )}
                                         {agreement?.warrantyProduct && (
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Garantiprodukt
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.warrantyProduct ||
                                                 "N/A"}
                                             </div>
@@ -2130,16 +2126,16 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
 
                                     {/* Additional Notes */}
                                     {agreement?.notes && (
-                                      <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                        <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                      <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                        <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                           Ytterligare anteckningar
                                         </h3>
-                                        <div className="p-6 grid grid-cols-2 gap-6">
+                                        <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                           <div>
-                                            <div className="text-sm text-gray-500 mb-1">
+                                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                               Anteckningar
                                             </div>
-                                            <div className="text-sm text-gray-900">
+                                            <div className="text-sm text-slate-900 dark:text-white">
                                               {agreement.notes || "N/A"}
                                             </div>
                                           </div>
@@ -2149,7 +2145,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                   </>
                                 )}
                                 <div>
-                                  {/* <h3 className="text-base font-semibold text-gray-900 mb-4">
+                                  {/* <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
                                     Customer Information
                                   </h3> */}
                                   {/* Default/Fallback for non-Sales, non-Agency, and non-Purchase Agreements */}
@@ -2157,56 +2153,56 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     agreement.type !== "Agency Agreement" &&
                                     agreement.type !== "Purchase Agreement" && (
                                       <div>
-                                        <h3 className="text-base font-semibold text-gray-900 mb-4">
+                                        <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
                                           Customer Information
                                         </h3>
-                                        <div className="grid grid-cols-4 gap-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-4 sm:p-6">
                                           {agreement?.name && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Name
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.name || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.email && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Email
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.email || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.phone && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Phone
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.phone || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.address && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Address
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.address || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.customerType && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Customer Type
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.customerType ||
                                                   "N/A"}
                                               </div>
@@ -2214,30 +2210,30 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.birthDate && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Birth Date
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.birthDate || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.gender && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Gender
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.gender || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.socialSecurityNumber && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Social Security Number
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.socialSecurityNumber ||
                                                   "N/A"}
                                               </div>
@@ -2245,10 +2241,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.organizationNumber && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Organization Number
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.organizationNumber ||
                                                   "N/A"}
                                               </div>
@@ -2272,17 +2268,17 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                       agreement?.numberOfKeys ||
                                       agreement?.deck ||
                                       agreement?.notes) && (
-                                      <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                        <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                      <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                        <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                           Fordonsinformation
                                         </h3>
-                                        <div className="p-6 grid grid-cols-2 gap-6">
+                                        <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                           {agreement?.registrationNumber && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Registreringsnummer
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {(
                                                   agreement.registrationNumber ||
                                                   "N/A"
@@ -2293,14 +2289,14 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           {(agreement?.salesPriceSEK ||
                                             agreement?.purchaseDate) && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 {agreement.type ===
                                                 "Sales Agreement"
                                                   ? "Försäljning"
                                                   : "Köp"}{" "}
                                                 Datum
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {(agreement.type ===
                                                 "Sales Agreement"
                                                   ? agreement.salesPriceSEK
@@ -2311,7 +2307,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.purchasePrice && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 {agreement.type ===
                                                   "Sales Agreement" ||
                                                 agreement.type ===
@@ -2320,7 +2316,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                                   : "Köps"}{" "}
                                                 Pris
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.purchasePrice ||
                                                   "N/A"}
                                               </div>
@@ -2328,10 +2324,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.paymentMethod && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Betalningsmetod
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.paymentMethod ||
                                                   "N/A"}
                                               </div>
@@ -2339,10 +2335,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.vatType && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Moms typ
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.vatType || "N/A"}
                                               </div>
                                             </div>
@@ -2351,10 +2347,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                             "Purchase Agreement" &&
                                             agreement?.creditMarking && (
                                               <div>
-                                                <div className="text-sm text-gray-500 mb-1">
+                                                <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                   Kreditmarkering
                                                 </div>
-                                                <div className="text-sm text-gray-900">
+                                                <div className="text-sm text-slate-900 dark:text-white">
                                                   {agreement.creditMarking ||
                                                     "N/A"}
                                                 </div>
@@ -2362,10 +2358,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                             )}
                                           {agreement?.mileage && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Miltal
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.mileage || "N/A"}
                                               </div>
                                             </div>
@@ -2374,10 +2370,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                             "Agency Agreement" &&
                                             agreement?.latestService && (
                                               <div>
-                                                <div className="text-sm text-gray-500 mb-1">
+                                                <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                   Senaste service
                                                 </div>
-                                                <div className="text-sm text-gray-900">
+                                                <div className="text-sm text-slate-900 dark:text-white">
                                                   {agreement.latestService ||
                                                     "N/A"}
                                                 </div>
@@ -2385,10 +2381,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                             )}
                                           {agreement?.numberOfKeys && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Antal nycklar
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.numberOfKeys ||
                                                   "N/A"}
                                               </div>
@@ -2396,23 +2392,23 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                           )}
                                           {agreement?.deck && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 Däck
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.deck || "N/A"}
                                               </div>
                                             </div>
                                           )}
                                           {agreement?.notes && (
                                             <div>
-                                              <div className="text-sm text-gray-500 mb-1">
+                                              <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                                 {agreement.type ===
                                                 "Sales Agreement"
                                                   ? "Betalningsinformation"
                                                   : "Anteckningar"}
                                               </div>
-                                              <div className="text-sm text-gray-900">
+                                              <div className="text-sm text-slate-900 dark:text-white">
                                                 {agreement.notes || "N/A"}
                                               </div>
                                             </div>
@@ -2423,32 +2419,32 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
 
                                   {agreement.type === "Agency Agreement" ? (
                                     <div>
-                                      <h3 className="text-base font-semibold text-gray-900 mb-4">
+                                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-4">
                                         Ekonomisk information
                                       </h3>
-                                      <div className="grid grid-cols-4 gap-6">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-4 sm:p-6">
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Provision
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.commissionRate || "N/A"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Provisionsbelopp
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.commissionAmount ||
                                               "N/A"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Byråavgift
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.agencyFee || "N/A"}
                                           </div>
                                         </div>
@@ -2459,61 +2455,61 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                   )}
 
                                   {agreement.type === "Sales Agreement" ? (
-                                    <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                      <h3 className="bg-[#F0F7FF] px-6 py-4">
+                                    <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                      <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                         Inbytesinformation
                                       </h3>
-                                      <div className="p-6 grid grid-cols-2 gap-6">
+                                      <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Inbyte
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.tradeInRegistrationNumber
                                               ? "Ja"
                                               : "Nej"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Registreringsnummer för inbyte
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.tradeInRegistrationNumber ||
                                               "N/A"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Inköpsdatum för inbyte
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.tradeInPurchaseDate ||
                                               "N/A"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Inköpspris för inbyte
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.tradeInPurchasePrice ||
                                               "N/A"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Miltal för inbyte
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.tradeInMileage || "N/A"}
                                           </div>
                                         </div>
                                         <div>
-                                          <div className="text-sm text-gray-500 mb-1">
+                                          <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                             Kreditmarkering för inbyte
                                           </div>
-                                          <div className="text-sm text-gray-900">
+                                          <div className="text-sm text-slate-900 dark:text-white">
                                             {agreement.tradeInCreditMaking ||
                                               "N/A"}
                                           </div>
@@ -2524,13 +2520,13 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                     ""
                                   )}
 
-                                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                    <div className="bg-[#F0F7FF] px-6 py-4 flex justify-between items-center">
-                                      <h2 className="text-lg font-semibold text-gray-900">
+                                  <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                    <div className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+                                      <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                                         Dokument
                                       </h2>
                                     </div>
-                                    <div className="p-6">
+                                    <div className="p-4 sm:p-6">
                                       <div className="space-y-3">
                                         <PDFPreview agreement={agreement} />
                                       </div>
@@ -2546,7 +2542,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                       {/* Trade-in Row */}
                       {agreement.tradeInRegistrationNumber && (
                         <tr
-                          className={`hover:bg-gray-50 ${
+                          className={`hover:bg-slate-50 dark:bg-slate-950 ${
                             expandedId === `${agreement.id}-tradein`
                               ? "bg-[#E9EEF640]"
                               : ""
@@ -2562,10 +2558,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                       : `${agreement.id}-tradein`
                                   )
                                 }
-                                className="flex items-center justify-center w-6 h-6 hover:bg-gray-200 rounded transition-colors cursor-pointer"
+                                className="flex items-center justify-center w-6 h-6 hover:bg-slate-200 dark:bg-slate-700 rounded transition-colors cursor-pointer"
                               >
                                 <span
-                                  className={`text-gray-400 text-xs transition-transform ${
+                                  className={`text-slate-400 dark:text-slate-500 text-xs transition-transform ${
                                     expandedId === `${agreement.id}-tradein`
                                       ? "rotate-180"
                                       : ""
@@ -2578,7 +2574,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                                 <span className="bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white rounded-tl rounded-bl px-2 py-2 text-xs font-bold">
                                   S
                                 </span>
-                                <span className="font-medium text-gray-900">
+                                <span className="font-medium text-slate-900 dark:text-white">
                                   {(
                                     agreement.tradeInRegistrationNumber || "N/A"
                                   ).toUpperCase()}
@@ -2586,13 +2582,13 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                               </span>
                             </div>
                           </td>
-                          <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
+                          <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-slate-700 dark:text-slate-200">
                             {agreement.tradeInVehicleModel || "N/A"}
                           </td>
-                          <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
+                          <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-slate-700 dark:text-slate-200">
                             Trade-in
                           </td>
-                          <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
+                          <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-slate-700 dark:text-slate-200">
                             {agreement.tradeInPurchaseDate
                               ? new Date(
                                   agreement.tradeInPurchaseDate
@@ -2604,13 +2600,13 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                               : "N/A"}
                           </td>
                           <td className="md:py-4 py-1.5 md:px-4 px-2">
-                            <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                            <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                               {agreement.tradeInPurchasePrice || "N/A"}
                             </span>
                           </td>
                           <td className="md:py-4 py-1.5 md:px-4 px-2">
                             <button
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-md transition-colors cursor-pointer"
+                              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:bg-red-950/30 p-2 rounded-md transition-colors cursor-pointer"
                               onClick={() =>
                                 setDeletePopupId(agreement.id.toString())
                               }
@@ -2627,65 +2623,65 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                           <tr>
                             <td
                               colSpan={7}
-                              className="bg-[#E9EEF640] border-t border-gray-200"
+                              className="bg-slate-50/80 dark:bg-slate-950/60 border-t border-slate-200 dark:border-slate-800"
                             >
                               {/* Trade-in expanded content */}
-                              <div className="p-6">
-                                <div className="flex flex-col gap-6">
-                                  <div className="mb-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                    <h3 className="bg-[#F0F7FF] px-6 py-4">
+                              <div className="p-4 sm:p-6">
+                                <div className="flex flex-col gap-4 sm:p-6">
+                                  <div className="mb-6 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                    <h3 className="bg-[#F0F7FF] dark:bg-slate-800 px-4 sm:px-6 py-3 sm:py-4">
                                       Detaljer om inbytesfordon
                                     </h3>
-                                    <div className="p-6 grid grid-cols-2 gap-6">
+                                    <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4 sm:p-6">
                                       <div>
-                                        <div className="text-sm text-gray-500 mb-1">
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                           Registreringsnummer
                                         </div>
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-slate-900 dark:text-white">
                                           {agreement.tradeInRegistrationNumber ||
                                             "N/A"}
                                         </div>
                                       </div>
                                       <div>
-                                        <div className="text-sm text-gray-500 mb-1">
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                           Inköpsdatum
                                         </div>
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-slate-900 dark:text-white">
                                           {agreement.tradeInPurchaseDate ||
                                             "N/A"}
                                         </div>
                                       </div>
                                       <div>
-                                        <div className="text-sm text-gray-500 mb-1">
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                           Inköpspris
                                         </div>
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-slate-900 dark:text-white">
                                           {agreement.tradeInPurchasePrice ||
                                             "N/A"}
                                         </div>
                                       </div>
                                       <div>
-                                        <div className="text-sm text-gray-500 mb-1">
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                           Miltal
                                         </div>
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-slate-900 dark:text-white">
                                           {agreement.tradeInMileage || "N/A"}
                                         </div>
                                       </div>
                                       <div>
-                                        <div className="text-sm text-gray-500 mb-1">
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                           Kreditmärkning
                                         </div>
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-slate-900 dark:text-white">
                                           {agreement.tradeInCreditMaking ||
                                             "N/A"}
                                         </div>
                                       </div>
                                       <div>
-                                        <div className="text-sm text-gray-500 mb-1">
+                                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-1">
                                           Restbelopp
                                         </div>
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-slate-900 dark:text-white">
                                           {agreement.tradeInRestAmount || "N/A"}
                                         </div>
                                       </div>
@@ -2706,10 +2702,10 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
       </div>
       {!isLoading && !error && filtered.length > 0 && (
         <div className="flex justify-between md:flex-row flex-col md:items-center items-start md:gap-0 gap-4 mt-6">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
             <span>Visum</span>
             <select
-              className="border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-sm cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={pageSize}
               onChange={handlePageSizeChange}
             >
@@ -2724,7 +2720,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-3 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+              className="px-3 py-3 text-sm border border-slate-300 dark:border-slate-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:bg-slate-950 cursor-pointer"
             >
               <ArrowLeftIcon className="w-[6px] h-[10px]" />
             </button>
@@ -2741,7 +2737,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
                   className={`px-3 py-2 text-sm border rounded-md cursor-pointer ${
                     page === pageNum
                       ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 hover:bg-gray-50"
+                      : "border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:bg-slate-950"
                   }`}
                 >
                   {pageNum}
@@ -2749,12 +2745,12 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
               );
             })}
             {totalPages > 5 && page < totalPages - 2 && (
-              <span className="px-2 text-gray-500">...</span>
+              <span className="px-2 text-slate-500 dark:text-slate-400">...</span>
             )}
             {totalPages > 1 && page < totalPages - 1 && totalPages > 5 && (
               <button
                 onClick={() => setPage(totalPages)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+                className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-md hover:bg-slate-50 dark:bg-slate-950 cursor-pointer"
               >
                 {totalPages}
               </button>
@@ -2762,7 +2758,7 @@ const AgreementsTable: React.FC<AgreementsTableProps> = ({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-3 py-3 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
+              className="px-3 py-3 text-sm border border-slate-300 dark:border-slate-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:bg-slate-950 cursor-pointer"
             >
               <ArrowLeftDoubleIcon className="w-[6px] h-[10px] rotate-180" />
             </button>

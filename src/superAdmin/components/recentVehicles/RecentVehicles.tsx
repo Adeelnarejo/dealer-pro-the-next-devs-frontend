@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  CarFront,
+  ArrowRight,
+  CalendarDays,
+  CircleDollarSign,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 import { makeGetRequest } from "../../../api/Api";
 
 interface Vehicle {
@@ -14,138 +22,462 @@ interface Vehicle {
 
 const RecentVehicles = () => {
   const navigate = useNavigate();
+
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRecentVehicles = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await makeGetRequest("vehicles/getAllVehicles");
-        if (response.data && response.data.success) {
-          const sortedByUpdated = response.data.data.sort(
-            (a: Vehicle, b: Vehicle) =>
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          );
-          setVehicles(sortedByUpdated.slice(0, 5));
-        } else {
-          setError(response.data?.message || "Failed to fetch vehicles.");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching vehicles.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+  const fetchRecentVehicles = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await makeGetRequest("vehicles/getAllVehicles");
+
+      if (response.data && response.data.success) {
+        const sortedByUpdated = [...(response.data.data || [])].sort(
+          (a: Vehicle, b: Vehicle) =>
+            new Date(b.updatedAt).getTime() -
+            new Date(a.updatedAt).getTime()
+        );
+
+        setVehicles(sortedByUpdated.slice(0, 5));
+      } else {
+        setError(
+          response.data?.message || "Failed to fetch vehicles."
+        );
       }
-    };
+    } catch (err) {
+      console.error("Recent vehicles error:", err);
+      setError("An error occurred while fetching vehicles.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchRecentVehicles();
   }, []);
 
+  const formatPrice = (price: number) => {
+    if (typeof price !== "number" || Number.isNaN(price)) {
+      return "N/A";
+    }
+
+    return `${price.toLocaleString("en-US")} Kr`;
+  };
+
+  const getStatusClasses = (status: Vehicle["status"]) => {
+    switch (status) {
+      case "Available":
+        return {
+          wrapper:
+            "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400",
+          dot: "bg-emerald-500",
+        };
+
+      case "Reserved":
+        return {
+          wrapper:
+            "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400",
+          dot: "bg-amber-500",
+        };
+
+      case "Sold":
+      case "Sold Out":
+        return {
+          wrapper:
+            "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+          dot: "bg-slate-400",
+        };
+
+      default:
+        return {
+          wrapper:
+            "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+          dot: "bg-slate-400",
+        };
+    }
+  };
+
   return (
-    <div className="bg-white rounded-[20px] p-6 dashboard-cards">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[20px] font-semibold text-[#000814] font-plus-jakarta">
-          Senaste fordon
-        </h2>
+    <div
+      className="
+        w-full
+        rounded-[24px]
+        border border-slate-200
+        bg-white
+        p-4 sm:p-5 lg:p-6
+        shadow-[0_8px_30px_rgba(15,23,42,0.04)]
+        transition-colors
+        dark:border-slate-800
+        dark:bg-[#0b1120]
+        dark:shadow-none
+        font-plus-jakarta
+      "
+    >
+      {/* Header */}
+      <div className="mb-5 flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className="
+              flex h-11 w-11 shrink-0 items-center justify-center
+              rounded-[14px]
+              bg-blue-50
+              text-blue-600
+              dark:bg-blue-500/10
+              dark:text-blue-400
+            "
+          >
+            <CarFront className="h-5 w-5" />
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="truncate text-[17px] font-bold text-slate-900 dark:text-white sm:text-[19px]">
+              Recent Vehicles
+            </h2>
+
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+              Latest inventory updates
+            </p>
+          </div>
+        </div>
+
         <button
+          type="button"
           onClick={() => navigate("/vehicles")}
-          className="text-[#FF8B1F] text-sm font-semibold font-plus-jakarta hover:text-[#e67b15] border-b border-[#FF8B1F] cursor-pointer"
+          className="
+            group
+            flex shrink-0 items-center gap-1.5
+            rounded-lg
+            px-2.5 py-2
+            text-xs font-semibold
+            text-blue-600
+            transition-all
+            hover:bg-blue-50
+            dark:text-blue-400
+            dark:hover:bg-blue-500/10
+            sm:text-sm
+            cursor-pointer
+          "
         >
-          Se mer
+          <span>View all</span>
+
+          <ArrowRight
+            className="
+              h-4 w-4
+              transition-transform
+              group-hover:translate-x-0.5
+            "
+          />
         </button>
       </div>
 
-      <div className="overflow-x-auto overflow-y-auto max-h-[300px]">
-        <table className="w-full">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-[#F0F7FF] rounded-lg text-left">
-              <th className="py-3 px-4 text-sm font-medium text-[#5E636B] font-plus-jakarta rounded-l-lg">
-                Fordon
-              </th>
-              <th className="py-3 px-4 text-sm font-medium text-[#5E636B] font-plus-jakarta">
-                År
-              </th>
-              <th className="py-3 px-4 text-sm font-medium text-[#5E636B] font-plus-jakarta">
-                Status
-              </th>
-              <th className="py-3 px-4 text-sm font-medium text-[#5E636B] font-plus-jakarta rounded-r-lg">
-                Pris
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {isLoading ? (
-              [...Array(5)].map((_, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="h-6 bg-gray-200 rounded-full animate-pulse w-16"></div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+      {/* Table */}
+      <div
+        className="
+          overflow-hidden
+          rounded-[16px]
+          border border-slate-200
+          dark:border-slate-800
+        "
+      >
+        <div className="overflow-x-auto scrollbar-hide">
+          <table className="w-full min-w-[680px]">
+            {/* Table Header */}
+            <thead>
+              <tr
+                className="
+                  border-b border-slate-200
+                  bg-slate-50
+                  dark:border-slate-800
+                  dark:bg-slate-900/70
+                "
+              >
+                <th className="px-4 py-3.5 text-left">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Vehicle
+                  </span>
+                </th>
+
+                <th className="px-4 py-3.5 text-left">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Year
+                  </span>
+                </th>
+
+                <th className="px-4 py-3.5 text-left">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Status
+                  </span>
+                </th>
+
+                <th className="px-4 py-3.5 text-left">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Price
+                  </span>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {/* Loading */}
+              {isLoading &&
+                [...Array(5)].map((_, index) => (
+                  <tr key={`loading-${index}`}>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 shrink-0 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+
+                        <div className="space-y-2">
+                          <div className="h-3.5 w-28 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+                          <div className="h-2.5 w-20 animate-pulse rounded bg-slate-100 dark:bg-slate-800/70" />
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <div className="h-3.5 w-12 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <div className="h-6 w-20 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <div className="h-3.5 w-24 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+                    </td>
+                  </tr>
+                ))}
+
+              {/* Error */}
+              {!isLoading && error && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-10">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div
+                        className="
+                          mb-3 flex h-12 w-12 items-center justify-center
+                          rounded-full
+                          bg-red-50
+                          text-red-500
+                          dark:bg-red-500/10
+                          dark:text-red-400
+                        "
+                      >
+                        <AlertCircle className="h-5 w-5" />
+                      </div>
+
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                        Unable to load vehicles
+                      </p>
+
+                      <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
+                        {error}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={fetchRecentVehicles}
+                        className="
+                          mt-4
+                          flex items-center gap-2
+                          rounded-lg
+                          bg-blue-600
+                          px-4 py-2
+                          text-xs font-semibold text-white
+                          transition
+                          hover:bg-blue-700
+                          cursor-pointer
+                        "
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Try again
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))
-            ) : error ? (
-              <tr>
-                <td colSpan={4} className="py-6 text-center text-red-500">
-                  {error}
-                </td>
-              </tr>
-            ) : vehicles.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="py-6 text-center text-gray-500">
-                  Inga fordon hittades
-                </td>
-              </tr>
-            ) : (
-              vehicles.map((vehicle) => (
-                <tr key={vehicle.id} className="hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <span className="text-sm font-medium text-[#000814] font-plus-jakarta">
-                      {vehicle.vehicleName}
-                    </span>
+              )}
+
+              {/* Empty */}
+              {!isLoading && !error && vehicles.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-12">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div
+                        className="
+                          mb-3 flex h-12 w-12 items-center justify-center
+                          rounded-full
+                          bg-slate-100
+                          text-slate-400
+                          dark:bg-slate-800
+                          dark:text-slate-500
+                        "
+                      >
+                        <CarFront className="h-5 w-5" />
+                      </div>
+
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                        No vehicles found
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Recently added vehicles will appear here.
+                      </p>
+                    </div>
                   </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-[#5E636B] font-plus-jakarta">
-                      {vehicle.year}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium font-plus-jakarta
-                        ${
-                          vehicle.status === "Available"
-                            ? "bg-[#ECFDF3] text-[#027A48]"
-                            : "bg-[#F2F4F7] text-[#344054]"
-                        }
-                      `}
+                </tr>
+              )}
+
+              {/* Vehicles */}
+              {!isLoading &&
+                !error &&
+                vehicles.map((vehicle) => {
+                  const statusClasses = getStatusClasses(
+                    vehicle.status
+                  );
+
+                  return (
+                    <tr
+                      key={vehicle.id}
+                      className="
+                        group
+                        transition-colors
+                        hover:bg-slate-50
+                        dark:hover:bg-slate-900/60
+                      "
                     >
-                      {vehicle.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-[#5E636B] font-plus-jakarta">
-                      {typeof vehicle.price === "number" &&
-                      vehicle.price !== null
-                        ? vehicle.price.toLocaleString()
-                        : "N/A"}{" "}
-                      Kr
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                      {/* Vehicle */}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="
+                              flex h-9 w-9 shrink-0 items-center justify-center
+                              rounded-xl
+                              bg-blue-50
+                              text-blue-600
+                              transition-colors
+                              group-hover:bg-blue-100
+                              dark:bg-blue-500/10
+                              dark:text-blue-400
+                              dark:group-hover:bg-blue-500/15
+                            "
+                          >
+                            <CarFront className="h-4 w-4" />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                              {vehicle.vehicleName || "Unnamed Vehicle"}
+                            </p>
+
+                            <p className="mt-0.5 truncate text-[11px] text-slate-400 dark:text-slate-500">
+                              {vehicle.model || "Model not available"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Year */}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="
+                              flex h-8 w-8 shrink-0 items-center justify-center
+                              rounded-lg
+                              bg-slate-100
+                              text-slate-500
+                              dark:bg-slate-800
+                              dark:text-slate-400
+                            "
+                          >
+                            <CalendarDays className="h-3.5 w-3.5" />
+                          </div>
+
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {vehicle.year || "N/A"}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-4 py-4">
+                        <span
+                          className={`
+                            inline-flex items-center gap-1.5
+                            rounded-full
+                            px-2.5 py-1
+                            text-[11px] font-bold
+                            ${statusClasses.wrapper}
+                          `}
+                        >
+                          <span
+                            className={`
+                              h-1.5 w-1.5 rounded-full
+                              ${statusClasses.dot}
+                            `}
+                          />
+
+                          {vehicle.status || "Unknown"}
+                        </span>
+                      </td>
+
+                      {/* Price */}
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="
+                              flex h-8 w-8 shrink-0 items-center justify-center
+                              rounded-lg
+                              bg-emerald-50
+                              text-emerald-600
+                              dark:bg-emerald-500/10
+                              dark:text-emerald-400
+                            "
+                          >
+                            <CircleDollarSign className="h-3.5 w-3.5" />
+                          </div>
+
+                          <span className="whitespace-nowrap text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {formatPrice(vehicle.price)}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Footer */}
+      {!isLoading && !error && vehicles.length > 0 && (
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            Showing {vehicles.length} recent{" "}
+            {vehicles.length === 1 ? "vehicle" : "vehicles"}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => navigate("/vehicles")}
+            className="
+              flex items-center gap-1.5
+              text-xs font-semibold
+              text-blue-600
+              transition-colors
+              hover:text-blue-700
+              dark:text-blue-400
+              dark:hover:text-blue-300
+              cursor-pointer
+            "
+          >
+            Manage inventory
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

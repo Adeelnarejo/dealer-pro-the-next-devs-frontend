@@ -1,191 +1,623 @@
-import { useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { Vector } from "../../assets";
+import { useState } from "react";
+import {
+  MapPin,
+  CalendarDays,
+  CarFront,
+  Search,
+  ChevronDown,
+  ShieldCheck,
+} from "lucide-react";
+import Header from "./Header";
 
 const Hero = () => {
-  const topRowRef = useRef(null);
-  const bottomRowRef = useRef(null);
-  const navigate = useNavigate();
+  const [location, setLocation] = useState("Dubai Silicon Oasis");
+  const [vehicleType, setVehicleType] = useState("All vehicles");
+  const [availability, setAvailability] = useState("Any date");
 
-  const topRowImages = [
-    "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1542362567-b07e54358753?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=300&h=400&fit=crop",
-  ];
-
-  const bottomRowImages = [
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1494905998402-395d579af36f?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1611651338412-8403fa6e3599?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=300&h=400&fit=crop",
-    "https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=300&h=400&fit=crop",
-  ];
-
-  const altTexts = [
-    "Car exterior",
-    "Black luxury car",
-    "Yellow sports car",
-    "White car",
-    "Dark car",
-    "Car interior",
-    "Blue car",
-    "Car showroom",
-    "Handshake deal",
-    "Woman in car",
-    "Car keys",
-    "Red sports car",
-  ];
-
-  // Duplicate images for seamless loop
-  const duplicatedTopRow = [...topRowImages, ...topRowImages, ...topRowImages];
-  const duplicatedBottomRow = [
-    ...bottomRowImages,
-    ...bottomRowImages,
-    ...bottomRowImages,
-  ];
+  const handleSearch = () => {
+    console.log({
+      location,
+      vehicleType,
+      availability,
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute top-0 left-0 w-full pointer-events-none z-0">
-        <img className="w-full h-full opacity-5" src={Vector} alt="" />
+    <section
+      className="
+        relative
+        min-h-screen
+        w-full
+        overflow-hidden
+        bg-slate-900
+        transition-colors
+        duration-300
+
+        dark:bg-[#020b16]
+      "
+    >
+      {/* =====================================================
+          BACKGROUND IMAGE
+      ===================================================== */}
+
+      <div className="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=2400&q=90"
+          alt="Premium car"
+          className="
+            h-full
+            w-full
+            object-cover
+            object-center
+          "
+        />
+
+        {/* Dark overlay */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-black/35
+            transition-opacity
+            duration-300
+
+            dark:bg-black/50
+          "
+        />
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-b
+            from-black/55
+            via-black/10
+            to-black/45
+
+            dark:from-black/65
+            dark:via-black/25
+            dark:to-black/65
+          "
+        />
       </div>
-      {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
-        <div className="text-center">
-          <div className="inline-block mb-6">
-            <span className="text-sm text-gray-600 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-              Kostnadsfritt för bilhandlare
-            </span>
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
+      <Header />
+
+      {/* =====================================================
+          HERO CONTENT
+      ===================================================== */}
+
+      <div
+        className="
+          relative
+          z-10
+          flex
+          min-h-screen
+          flex-col
+          px-4
+          pb-8
+          pt-32
+
+          sm:px-6
+          sm:pb-10
+          sm:pt-36
+
+          lg:px-10
+          lg:pt-40
+        "
+      >
+        {/* =================================================
+            HEADING
+        ================================================= */}
+
+        <div className="mx-auto w-full max-w-4xl text-center">
+
+          {/* Badge */}
+
+          <div
+            className="
+              mb-5
+              inline-flex
+              items-center
+              gap-2
+              rounded-full
+              border
+              border-white/30
+              bg-white/10
+              px-4
+              py-2
+              text-xs
+              font-semibold
+              text-white
+              backdrop-blur-md
+              transition-all
+              duration-300
+
+              dark:border-white/20
+              dark:bg-black/20
+            "
+          >
+            <ShieldCheck
+              size={15}
+              className="text-blue-300"
+            />
+
+            The smarter way to manage your dealership
           </div>
 
-          <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-8 leading-tight max-w-4xl mx-auto">
-            Allt din bilfirma behöver – utan att det kostar en krona
+          {/* Heading */}
+
+          <h1
+            className="
+              mx-auto
+              max-w-4xl
+              text-4xl
+              font-bold
+              leading-tight
+              tracking-tight
+              text-white
+              drop-shadow-2xl
+
+              sm:text-5xl
+              md:text-6xl
+              lg:text-7xl
+            "
+          >
+            Your dealership.
+
+            <span className="block text-blue-300">
+              Smarter. Simpler. Better.
+            </span>
           </h1>
 
-          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-12 mb-12">
-            <div className="flex items-center text-[#232323] text-[18px] font-medium bg-[#E9F2FE] px-4 py-2 rounded-full shadow-sm">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-              <span>Helt kostnadsfritt</span>
+          {/* Description */}
+
+          <p
+            className="
+              mx-auto
+              mt-5
+              max-w-2xl
+              text-sm
+              font-medium
+              leading-6
+              text-white
+              drop-shadow-lg
+
+              sm:text-base
+              lg:text-lg
+            "
+          >
+            Manage your vehicles, customers, sales and dealership
+            operations from one powerful platform built for modern
+            dealerships.
+          </p>
+        </div>
+
+        {/* =================================================
+            SEARCH BOX
+        ================================================= */}
+
+        <div
+          className="
+            relative
+            z-20
+            mx-auto
+            mt-auto
+            w-full
+            max-w-6xl
+            pt-10
+
+            sm:pt-16
+            lg:pt-24
+          "
+        >
+          <div
+            className="
+              rounded-[24px]
+              bg-white
+              p-3
+              shadow-2xl
+              transition-colors
+              duration-300
+
+              dark:border
+              dark:border-slate-700/60
+              dark:bg-[#0b1a2b]
+              dark:shadow-black/50
+
+              sm:rounded-[28px]
+              sm:p-4
+            "
+          >
+            <div
+              className="
+                grid
+                gap-2
+
+                lg:grid-cols-[1.3fr_1fr_1fr_auto]
+              "
+            >
+              {/* =================================================
+                  LOCATION
+              ================================================= */}
+
+              <div
+                className="
+                  flex
+                  min-h-[64px]
+                  items-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  border-slate-100
+                  bg-slate-50
+                  px-4
+                  transition-colors
+                  duration-300
+
+                  dark:border-slate-700/70
+                  dark:bg-[#101f33]
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-blue-100
+                    text-blue-600
+
+                    dark:bg-blue-500/10
+                    dark:text-blue-400
+                  "
+                >
+                  <MapPin size={19} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <label
+                    className="
+                      block
+                      text-[10px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-slate-400
+                    "
+                  >
+                    Location
+                  </label>
+
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) =>
+                      setLocation(e.target.value)
+                    }
+                    placeholder="Enter location"
+                    className="
+                      mt-1
+                      w-full
+                      bg-transparent
+                      text-sm
+                      font-bold
+                      text-slate-800
+                      outline-none
+                      transition-colors
+
+                      dark:text-slate-100
+                      dark:placeholder:text-slate-500
+                    "
+                  />
+                </div>
+              </div>
+
+              {/* =================================================
+                  VEHICLE
+              ================================================= */}
+
+              <div
+                className="
+                  flex
+                  min-h-[64px]
+                  items-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  border-slate-100
+                  bg-slate-50
+                  px-4
+                  transition-colors
+                  duration-300
+
+                  dark:border-slate-700/70
+                  dark:bg-[#101f33]
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-blue-100
+                    text-blue-600
+
+                    dark:bg-blue-500/10
+                    dark:text-blue-400
+                  "
+                >
+                  <CarFront size={19} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <label
+                    className="
+                      block
+                      text-[10px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-slate-400
+                    "
+                  >
+                    Vehicle Type
+                  </label>
+
+                  <div className="relative mt-1">
+
+                    <select
+                      value={vehicleType}
+                      onChange={(e) =>
+                        setVehicleType(e.target.value)
+                      }
+                      className="
+                        w-full
+                        appearance-none
+                        bg-transparent
+                        pr-5
+                        text-sm
+                        font-bold
+                        text-slate-800
+                        outline-none
+                        transition-colors
+
+                        dark:text-slate-100
+                      "
+                    >
+                      <option>All vehicles</option>
+                      <option>SUV</option>
+                      <option>Sedan</option>
+                      <option>Luxury</option>
+                      <option>Sports Car</option>
+                      <option>Electric</option>
+                    </select>
+
+                    <ChevronDown
+                      size={15}
+                      className="
+                        pointer-events-none
+                        absolute
+                        right-0
+                        top-1/2
+                        -translate-y-1/2
+                        text-slate-400
+                      "
+                    />
+
+                  </div>
+                </div>
+              </div>
+
+              {/* =================================================
+                  AVAILABILITY
+              ================================================= */}
+
+              <div
+                className="
+                  flex
+                  min-h-[64px]
+                  items-center
+                  gap-3
+                  rounded-2xl
+                  border
+                  border-slate-100
+                  bg-slate-50
+                  px-4
+                  transition-colors
+                  duration-300
+
+                  dark:border-slate-700/70
+                  dark:bg-[#101f33]
+                "
+              >
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-blue-100
+                    text-blue-600
+
+                    dark:bg-blue-500/10
+                    dark:text-blue-400
+                  "
+                >
+                  <CalendarDays size={19} />
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <label
+                    className="
+                      block
+                      text-[10px]
+                      font-bold
+                      uppercase
+                      tracking-wider
+                      text-slate-400
+                    "
+                  >
+                    Availability
+                  </label>
+
+                  <div className="relative mt-1">
+
+                    <select
+                      value={availability}
+                      onChange={(e) =>
+                        setAvailability(e.target.value)
+                      }
+                      className="
+                        w-full
+                        appearance-none
+                        bg-transparent
+                        pr-5
+                        text-sm
+                        font-bold
+                        text-slate-800
+                        outline-none
+                        transition-colors
+
+                        dark:text-slate-100
+                      "
+                    >
+                      <option>Any date</option>
+                      <option>Available today</option>
+                      <option>This week</option>
+                      <option>This month</option>
+                    </select>
+
+                    <ChevronDown
+                      size={15}
+                      className="
+                        pointer-events-none
+                        absolute
+                        right-0
+                        top-1/2
+                        -translate-y-1/2
+                        text-slate-400
+                      "
+                    />
+
+                  </div>
+                </div>
+              </div>
+
+              {/* =================================================
+                  SEARCH
+              ================================================= */}
+
+              <button
+                type="button"
+                onClick={handleSearch}
+                className="
+                  flex
+                  min-h-[64px]
+                  items-center
+                  justify-center
+                  gap-2
+                  rounded-2xl
+                  bg-blue-600
+                  px-8
+                  text-sm
+                  font-bold
+                  text-white
+                  shadow-lg
+                  transition-all
+                  duration-300
+                  hover:bg-blue-700
+                  active:scale-[0.98]
+                "
+              >
+                <Search size={19} />
+                Search
+              </button>
             </div>
-            <div className="flex items-center text-[#232323] text-[18px] font-medium bg-[#E9F2FE] px-4 py-2 rounded-full shadow-sm">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-              <span>Inga startavgifter</span>
-            </div>
-            <div className="flex items-center text-[#232323] text-[18px] font-medium bg-[#E9F2FE] px-4 py-2 rounded-full shadow-sm">
-              <div className="w-2 h-2 bg-blue-600 rounded-full mr-3"></div>
-              <span>Ingen uppsägningstid</span>
+
+            {/* =================================================
+                BOTTOM INFORMATION
+            ================================================= */}
+
+            <div
+              className="
+                mt-3
+                flex
+                flex-col
+                gap-2
+                border-t
+                border-slate-100
+                px-2
+                pt-3
+                text-[11px]
+                font-medium
+                text-slate-500
+                transition-colors
+                duration-300
+
+                dark:border-slate-700/70
+                dark:text-slate-400
+
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+                sm:px-3
+              "
+            >
+              <div className="flex items-center gap-2">
+
+                <span
+                  className="
+                    flex
+                    h-5
+                    w-5
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-blue-50
+                    font-bold
+                    text-blue-600
+
+                    dark:bg-blue-500/10
+                    dark:text-blue-400
+                  "
+                >
+                  ✓
+                </span>
+
+                Verified dealership inventory
+              </div>
+
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+
+                <span>✓ Updated inventory</span>
+                <span>✓ Trusted dealers</span>
+                <span>✓ Easy management</span>
+
+              </div>
             </div>
           </div>
-
-          <button
-            onClick={() => navigate("/signup")}
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
-          >
-            Skapa konto
-          </button>
         </div>
       </div>
-
-      {/* Image Slider Section */}
-      <div className="relative mt-16">
-        {/* Gradient overlays for fading effect - only at the ends */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-gray-100 to-transparent z-10 pointer-events-none"></div>
-        <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-gray-100 to-transparent z-10 pointer-events-none"></div>
-
-        {/* Top row - sliding left to right */}
-        <div className="relative h-32 lg:h-40 mb-4 overflow-hidden">
-          <div
-            ref={topRowRef}
-            className="flex space-x-3 animate-slide-right"
-            style={{
-              width: `${duplicatedTopRow.length * 160}px`,
-              animation: "slideRight 40s linear infinite",
-            }}
-          >
-            {duplicatedTopRow.map((image, index) => (
-              <div
-                key={`top-${index}`}
-                className="flex-shrink-0 w-36 h-32 lg:w-40 lg:h-40 bg-gray-200 overflow-hidden rounded-[12px] hover:scale-105 transition-transform duration-300 shadow-lg"
-              >
-                <img
-                  src={image}
-                  alt={altTexts[index % altTexts.length]}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom row - sliding right to left */}
-        <div className="relative h-32 lg:h-40 overflow-hidden">
-          <div
-            ref={bottomRowRef}
-            className="flex space-x-3 animate-slide-left"
-            style={{
-              width: `${duplicatedBottomRow.length * 160}px`,
-              animation: "slideLeft 40s linear infinite",
-            }}
-          >
-            {duplicatedBottomRow.map((image, index) => (
-              <div
-                key={`bottom-${index}`}
-                className="flex-shrink-0 w-36 h-32 lg:w-40 lg:h-40 bg-gray-200 overflow-hidden rounded-[12px] hover:scale-105 transition-transform duration-300 shadow-lg"
-              >
-                <img
-                  src={image}
-                  alt={altTexts[index % altTexts.length]}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes slideRight {
-          from {
-            transform: translateX(-33.333%);
-          }
-          to {
-            transform: translateX(0%);
-          }
-        }
-
-        @keyframes slideLeft {
-          from {
-            transform: translateX(0%);
-          }
-          to {
-            transform: translateX(-33.333%);
-          }
-        }
-
-        .animate-slide-right {
-          animation: slideRight 40s linear infinite;
-        }
-
-        .animate-slide-left {
-          animation: slideLeft 40s linear infinite;
-        }
-
-        /* Pause animation on hover */
-        .animate-slide-right:hover,
-        .animate-slide-left:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
-    </div>
+    </section>
   );
 };
 

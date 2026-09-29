@@ -8,7 +8,11 @@ import {
   Loader2,
   Signature,
   Link,
-  // Copy,
+  Clock3,
+  FileCheck2,
+  LockKeyhole,
+  AlertCircle,
+  ExternalLink,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { makeGetRequest, makePostRequest } from "../../api/Api";
@@ -16,11 +20,14 @@ import {
   BACKEND_API_ENDPOINT,
   xApiKey,
 } from "../../api/config";
+
 import AgreementPDF from "../../components/SignAgreement/AgreementPDF";
 import VerifikatPDF from "../../components/SignAgreement/VerifatPDF";
+
 import { useUserProfile } from "../../utils/useUserProfile";
 import { pdfLogo } from "../../assets";
 import { formatRemainingTime } from "../../utils/publicSigningUtils";
+
 import AgreementInformation from "../../components/Agreements/addNewAgreement/AgreementInformation";
 
 import Fordon from "../../components/Agreements/agreementInfo/Fordon";
@@ -28,47 +35,74 @@ import Leveransvilkor from "../../components/Agreements/agreementInfo/Leveransvi
 import Pris from "../../components/Agreements/agreementInfo/Pris";
 import AuthUserInfo from "../../components/Agreements/agreementInfo/AuthUserInfo";
 import CustomerInfo from "../../components/Agreements/agreementInfo/CustomerInfo";
+
 import axios from "axios";
 
 const AgreementSign = () => {
   const { agreementID } = useParams();
   const navigate = useNavigate();
+
   const pdfRef = useRef<HTMLDivElement>(null);
 
-  // Get URL parameters for public access
+  // ============================================================
+  // PUBLIC ACCESS
+  // ============================================================
   const urlParams = new URLSearchParams(window.location.search);
+
   const accessToken = urlParams.get("token");
   const expiryTime = urlParams.get("expires");
-  const isPublicAccess = accessToken && expiryTime;
 
+  const isPublicAccess = Boolean(accessToken && expiryTime);
+
+  // ============================================================
+  // STATE
+  // ============================================================
   const [agreementData, setAgreementData] = useState<any>(null);
+
   const [termsChecked, setTermsChecked] = useState(true);
   const [gdprChecked, setGdprChecked] = useState(true);
+
   const [isSigning, setIsSigning] = useState(false);
+
   const [showQR, setShowQR] = useState("");
+
   const [orderRef, setOrderRef] = useState("");
+
   const [signingStatus, setSigningStatus] = useState<
     "pending" | "approved" | null
   >(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showVerificationOptions, setShowVerificationOptions] = useState(false);
-  const [bankIdUrl, setBankIdUrl] = useState("");
-  const [isLinkExpired, setIsLinkExpired] = useState(false);
-  const [remainingTimeText, setRemainingTimeText] = useState("");
-  const [isGeneratingPublicLink, setIsGeneratingPublicLink] = useState(false);
-  // const [publicAccessLink, setPublicAccessLink] = useState("");
 
-  // Ref to store polling interval ID for cleanup
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const [showVerificationOptions, setShowVerificationOptions] =
+    useState(false);
+
+  const [bankIdUrl, setBankIdUrl] = useState("");
+
+  const [isLinkExpired, setIsLinkExpired] = useState(false);
+
+  const [remainingTimeText, setRemainingTimeText] = useState("");
+
+  const [isGeneratingPublicLink, setIsGeneratingPublicLink] =
+    useState(false);
+
   const pollingIntervalRef = useRef<number | null>(null);
   const pollingTimeoutRef = useRef<number | null>(null);
 
-  console.log(showVerificationOptions)
-
-
   const { user } = useUserProfile();
 
-  // Check if public access link is expired
+  const [select1, setSelect1] = useState("Signeringsalternativ");
+  const [select2, setSelect2] = useState("Signeringsalternativ");
+
+  const storedToken =
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token");
+
+  // ============================================================
+  // LINK EXPIRY
+  // ============================================================
   const checkLinkExpiry = useCallback(() => {
     if (isPublicAccess && expiryTime) {
       const expiryTimestamp = parseInt(expiryTime);
@@ -76,68 +110,82 @@ const AgreementSign = () => {
 
       if (currentTimestamp > expiryTimestamp) {
         setIsLinkExpired(true);
-        setError("This signing link has expired. Please request a new one.");
+        setError(
+          "This signing link has expired. Please request a new one."
+        );
         return true;
       }
     }
+
     return false;
   }, [isPublicAccess, expiryTime]);
 
-  const [select1, setSelect1] = useState("Signeringsalternativ");
-  const [select2, setSelect2] = useState("Signeringsalternativ");
-
-  // Cleanup function for polling
+  // ============================================================
+  // CLEAR POLLING
+  // ============================================================
   const clearPolling = () => {
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
+
     if (pollingTimeoutRef.current) {
       clearTimeout(pollingTimeoutRef.current);
       pollingTimeoutRef.current = null;
     }
   };
 
-
-  // Cancel signing function
+  // ============================================================
+  // CANCEL SIGNING
+  // ============================================================
   const cancelSigning = () => {
     clearPolling();
+
     setSigningStatus(null);
     setIsSigning(false);
+
     toast("Signing process cancelled");
   };
 
-  // Cleanup on component unmount
+  // ============================================================
+  // CLEANUP
+  // ============================================================
   useEffect(() => {
     return () => {
       clearPolling();
     };
   }, []);
 
-  // Check link expiry periodically for public access
+  // ============================================================
+  // LIVE EXPIRY COUNTDOWN
+  // ============================================================
   useEffect(() => {
     if (isPublicAccess && expiryTime) {
       const updateRemainingTime = () => {
         const timeText = formatRemainingTime(expiryTime);
+
         setRemainingTimeText(timeText);
 
         if (checkLinkExpiry()) {
-          return; // Stop if expired
+          return;
         }
       };
 
-      // Update immediately
       updateRemainingTime();
 
-      // Update every second for live countdown
       const interval = setInterval(updateRemainingTime, 1000);
 
       return () => clearInterval(interval);
     }
-  }, [isPublicAccess, expiryTime, checkLinkExpiry]);
+  }, [
+    isPublicAccess,
+    expiryTime,
+    checkLinkExpiry,
+  ]);
 
-  // console.log("orderRef", orderRef);
-
+  // ============================================================
+  // TRANSACTION DATA
+  // ============================================================
   const transactionData = {
     transactionNumber: "12345",
     regNumber: "ABC123",
@@ -155,10 +203,9 @@ const AgreementSign = () => {
     customerPersonnr: "19800101-1234",
   };
 
-  const storedToken =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
-
-
+  // ============================================================
+  // FETCH AGREEMENT
+  // ============================================================
   useEffect(() => {
     const fetchAgreementData = async () => {
       if (!agreementID) {
@@ -167,7 +214,6 @@ const AgreementSign = () => {
         return;
       }
 
-      // Check link expiry first for public access
       if (isPublicAccess && checkLinkExpiry()) {
         setIsLoading(false);
         return;
@@ -177,23 +223,14 @@ const AgreementSign = () => {
         setIsLoading(true);
         setError(null);
 
-
-        // Determine the endpoint based on access type
         const endpoint = isPublicAccess
           ? `publicsigning/getAgreement/${agreementID}?token=${accessToken}`
           : `agreements/getAgreementById/${agreementID}`;
 
-
         let response;
 
         if (isPublicAccess) {
-          // For public access, make a direct fetch call without authentication headers
           const fullUrl = `${BACKEND_API_ENDPOINT}${endpoint}`;
-          console.log("Making fetch request to:", fullUrl);
-          console.log("Headers being sent:", {
-            "Content-Type": "application/json",
-            "x-api-key": xApiKey,
-          });
 
           const fetchResponse = await fetch(fullUrl, {
             method: "GET",
@@ -202,11 +239,11 @@ const AgreementSign = () => {
               "x-api-key": xApiKey,
             },
           });
+
           const data = await fetchResponse.json();
-          console.log("API Response:", data);
+
           response = { data };
         } else {
-          // For authenticated access, use the normal makeGetRequest
           response = await makeGetRequest(endpoint);
         }
 
@@ -221,6 +258,7 @@ const AgreementSign = () => {
         }
       } catch (err) {
         console.error("Error fetching agreement:", err);
+
         setError(
           isPublicAccess
             ? "Invalid or expired signing link"
@@ -232,8 +270,16 @@ const AgreementSign = () => {
     };
 
     fetchAgreementData();
-  }, [agreementID, isPublicAccess, accessToken, checkLinkExpiry]);
+  }, [
+    agreementID,
+    isPublicAccess,
+    accessToken,
+    checkLinkExpiry,
+  ]);
 
+  // ============================================================
+  // DOWNLOAD AGREEMENT PDF
+  // ============================================================
   const handleDownload = async () => {
     if (!agreementData) {
       toast.error("Agreement data not available");
@@ -241,7 +287,9 @@ const AgreementSign = () => {
     }
 
     try {
-      toast.loading("Generating PDF...", { id: "pdf-generation" });
+      toast.loading("Generating PDF...", {
+        id: "pdf-generation",
+      });
 
       const blob = await pdf(
         <AgreementPDF
@@ -251,28 +299,42 @@ const AgreementSign = () => {
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
+
       const link = document.createElement("a");
+
       link.href = url;
 
       const timestamp = new Date()
         .toISOString()
         .slice(0, 19)
         .replace(/:/g, "-");
+
       link.download = `Agreement-${agreementID}-${timestamp}.pdf`;
 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      toast.success("PDF downloaded successfully!", { id: "pdf-generation" });
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to generate PDF. Please try again.", {
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF downloaded successfully!", {
         id: "pdf-generation",
       });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+
+      toast.error(
+        "Failed to generate PDF. Please try again.",
+        {
+          id: "pdf-generation",
+        }
+      );
     }
   };
 
+  // ============================================================
+  // GENERATE PUBLIC LINK
+  // ============================================================
   const handleGeneratePublicLink = async () => {
     if (!agreementID) {
       toast.error("Agreement ID not available");
@@ -280,31 +342,33 @@ const AgreementSign = () => {
     }
 
     setIsGeneratingPublicLink(true);
+
     try {
-      // Get the token from localStorage or sessionStorage like your other API calls
       const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("token");
 
       if (!token) {
         toast.error("Authentication required. Please log in.");
         return;
       }
 
-      // Use the correct endpoint with proper authentication headers
       const response = await fetch(
         `${BACKEND_API_ENDPOINT}publicsigning/generate-token/${agreementID}`,
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
             "x-api-key": xApiKey,
             token: `${token}`,
           },
+
           body: JSON.stringify({
             expiryHours: 1,
             emailSent: null,
             smsSent: null,
-          }), // Default 1 hour expiry with email/SMS tracking
+          }),
         }
       );
 
@@ -313,24 +377,37 @@ const AgreementSign = () => {
       if (data.success) {
         const publicUrl = data.data.publicLink;
 
-        // Copy to clipboard
         await navigator.clipboard.writeText(publicUrl);
-        // setPublicAccessLink(publicUrl);
 
-        toast.success("Public signing link copied to clipboard!");
+        toast.success(
+          "Public signing link copied to clipboard!"
+        );
+
         console.log("Generated public URL:", publicUrl);
+
         return publicUrl;
-      } else {
-        throw new Error(data.message || "Failed to generate public link");
       }
+
+      throw new Error(
+        data.message || "Failed to generate public link"
+      );
     } catch (error) {
-      console.error("Error generating public link:", error);
-      toast.error("Failed to generate public link. Please try again.");
+      console.error(
+        "Error generating public link:",
+        error
+      );
+
+      toast.error(
+        "Failed to generate public link. Please try again."
+      );
     } finally {
       setIsGeneratingPublicLink(false);
     }
   };
 
+  // ============================================================
+  // DOWNLOAD VERIFIKAT
+  // ============================================================
   const handleDownloadVerifikat = async () => {
     if (!transactionData) {
       toast.error("Transaction data not available");
@@ -345,30 +422,46 @@ const AgreementSign = () => {
       const blob = await pdf(
         <VerifikatPDF transactionData={transactionData} />
       ).toBlob();
+
       const url = URL.createObjectURL(blob);
+
       const link = document.createElement("a");
+
       link.href = url;
+
       link.download = `verifikat-${transactionData.transactionNumber}.pdf`;
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
 
       toast.success("Verifikat downloaded successfully!", {
         id: "verifikat-generation",
       });
     } catch (error) {
-      console.error("Error generating Verifikat PDF:", error);
-      toast.error("Failed to generate Verifikat. Please try again.", {
-        id: "verifikat-generation",
-      });
+      console.error(
+        "Error generating Verifikat PDF:",
+        error
+      );
+
+      toast.error(
+        "Failed to generate Verifikat. Please try again.",
+        {
+          id: "verifikat-generation",
+        }
+      );
     }
   };
 
+  // ============================================================
+  // BANKID HELPER
+  // ============================================================
   const handleBankHelper = async (
     agreementID: string | undefined,
     showQr: boolean = false
   ) => {
-
     const payload = {
       agreementID: parseInt(agreementID ?? ""),
       endUserIp: "13.60.79.146",
@@ -377,119 +470,156 @@ const AgreementSign = () => {
       getQr: true,
     };
 
-    console.log("=== BANK HELPER DEBUG ===");
-    console.log("isPublicAccess:", isPublicAccess);
-    console.log("showQr:", showQr);
-    console.log("Payload:", payload);
-
     let response;
 
     if (isPublicAccess) {
-      // For public access, use direct fetch without localStorage token
       const fetchResponse = await fetch(
         `${BACKEND_API_ENDPOINT}banksign/start`,
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
-            // "x-api-key": xApiKey,
             token: `${accessToken}`,
           },
+
           body: JSON.stringify(payload),
         }
       );
+
       const data = await fetchResponse.json();
+
       response = { data };
     } else {
-      // For authenticated access, use makePostRequest
-      response = await makePostRequest("banksign/start", payload);
+      response = await makePostRequest(
+        "banksign/start",
+        payload
+      );
     }
 
-    console.log("BankSign start response:", response.data);
-
     if (response.data.success) {
-      if (response.data.bankIdResponse?.qrImage && showQr) {
-        console.log("Setting QR code:", response.data.bankIdResponse.qrImage);
-        setShowQR(response.data.bankIdResponse.qrImage);
+      if (
+        response.data.bankIdResponse?.qrImage &&
+        showQr
+      ) {
+        setShowQR(
+          response.data.bankIdResponse.qrImage
+        );
       }
-      if (response.data.bankIdResponse?.bankidUrl) {
-        setBankIdUrl(response.data.bankIdResponse.bankidUrl);
+
+      if (
+        response.data.bankIdResponse?.bankidUrl
+      ) {
+        setBankIdUrl(
+          response.data.bankIdResponse.bankidUrl
+        );
+
         setShowVerificationOptions(true);
       }
-      if (response.data.bankIdResponse?.orderRef) {
-        setOrderRef(response.data.bankIdResponse.orderRef);
 
-        // Start polling for status
+      if (
+        response.data.bankIdResponse?.orderRef
+      ) {
+        setOrderRef(
+          response.data.bankIdResponse.orderRef
+        );
+
         const pollStatus = async () => {
           try {
-            const statusResponse = await makePostRequest("banksign/status", {
-              orderRef: response.data.bankIdResponse.orderRef,
-            });
+            const statusResponse =
+              await makePostRequest(
+                "banksign/status",
+                {
+                  orderRef:
+                    response.data.bankIdResponse.orderRef,
+                }
+              );
 
-            console.log("BankID Status Response:", statusResponse.data);
-
-            // Check for completion status more carefully
             if (
               statusResponse.data.success &&
-              statusResponse.data.bankIdStatus?.Response?.Status === "complete"
+              statusResponse.data.bankIdStatus?.Response
+                ?.Status === "complete"
             ) {
               setSigningStatus("approved");
-              toast.success("Signing approved successfully!");
+
+              toast.success(
+                "Signing approved successfully!"
+              );
+
               clearPolling();
+
               handleDownloadVerifikat();
             } else if (
-              statusResponse.data.bankIdStatus?.Response?.Status === "failed" ||
-              statusResponse.data.bankIdStatus?.Response?.Status === "cancelled"
+              statusResponse.data.bankIdStatus?.Response
+                ?.Status === "failed" ||
+              statusResponse.data.bankIdStatus?.Response
+                ?.Status === "cancelled"
             ) {
               setSigningStatus(null);
-              toast.error("Signing failed or was cancelled. Please try again.");
+
+              toast.error(
+                "Signing failed or was cancelled. Please try again."
+              );
+
               clearPolling();
             } else {
-              // Keep status as pending for other states like "outstanding", "started", "pending", etc.
               setSigningStatus("pending");
             }
           } catch (statusError) {
-            console.error("Error checking signing status:", statusError);
+            console.error(
+              "Error checking signing status:",
+              statusError
+            );
+
             setSigningStatus("pending");
           }
         };
 
-        // Set signing status to pending immediately
         setSigningStatus("pending");
 
-        // Clear any existing polling interval
         clearPolling();
 
-        // Start polling after a delay to give the service time to process
-        pollingIntervalRef.current = setInterval(
-          pollStatus,
-          3000
-        ) as unknown as number;
+        pollingIntervalRef.current =
+          setInterval(
+            pollStatus,
+            3000
+          ) as unknown as number;
 
-        // Set a timeout to stop polling after 5 minutes (300 seconds)
-        pollingTimeoutRef.current = setTimeout(() => {
-          clearPolling();
-          setSigningStatus(null);
-          toast.error("Signing timeout. Please try again.");
-        }, 300000) as unknown as number;
+        pollingTimeoutRef.current =
+          setTimeout(() => {
+            clearPolling();
 
-        // Return cleanup function
-        return clearPolling;
+            setSigningStatus(null);
+
+            toast.error(
+              "Signing timeout. Please try again."
+            );
+          }, 300000) as unknown as number;
       }
     } else {
-      toast.error("Failed to initiate BankID signing");
-      return;
+      toast.error(
+        "Failed to initiate BankID signing"
+      );
     }
   };
 
-  const handleBankSign = async (showQr: boolean = false) => {
+  // ============================================================
+  // BANKID SIGN
+  // ============================================================
+  const handleBankSign = async (
+    showQr: boolean = false
+  ) => {
     if (!termsChecked || !gdprChecked) {
-      toast.error("Please accept all terms and conditions");
+      toast.error(
+        "Please accept all terms and conditions"
+      );
+
       return;
     }
 
     if (!agreementID) {
       toast.error("No agreement ID found");
+
       return;
     }
 
@@ -497,40 +627,51 @@ const AgreementSign = () => {
     setSigningStatus(null);
 
     try {
-      await handleBankHelper(agreementID, showQr);
+      await handleBankHelper(
+        agreementID,
+        showQr
+      );
     } catch (error: any) {
-      console.error("Error initiating BankID signing:", error);
+      console.error(
+        "Error initiating BankID signing:",
+        error
+      );
+
       toast.error(
-        error.response?.data?.message || "An error occurred during signing"
+        error.response?.data?.message ||
+          "An error occurred during signing"
       );
     } finally {
       setIsSigning(false);
     }
   };
 
+  // ============================================================
+  // PHONE VERIFICATION
+  // ============================================================
   const handleVerifyWithPhone = async () => {
-    const publicLink = await handleGeneratePublicLink();
+    const publicLink =
+      await handleGeneratePublicLink();
 
     const phoneNumber =
       select1 === "denna-enhet"
         ? user?.phone
         : select2 === "denna-enhet"
-          ? agreementData?.dataValues.phone
-          : null;
+        ? agreementData?.dataValues.phone
+        : null;
 
-    // For public access, use customer phone from agreement data
-    const targetPhone = isPublicAccess ? agreementData?.dataValues.phone : phoneNumber;
-
-    console.log('------------------------------------')
-    console.log(targetPhone)
-    console.log('------------------------------------')
+    const targetPhone = isPublicAccess
+      ? agreementData?.dataValues.phone
+      : phoneNumber;
 
     if (!targetPhone) {
       toast.error("No phone number found");
       return;
     }
+
     try {
       setIsSigning(true);
+
       await handleBankHelper(agreementID);
 
       if (storedToken !== null) {
@@ -538,12 +679,15 @@ const AgreementSign = () => {
           `${BACKEND_API_ENDPOINT}banksign/sendBankIdLinkSMS`,
           {
             phone: targetPhone,
-            sender: agreementData?.dataValues.name,
+
+            sender:
+              agreementData?.dataValues.name,
+
             message: `Hej!
-        Ditt avtal är nu klart att läsas och signeras. Klicka på länken nedan:
-        ${publicLink}
-        Har du några frågor är du varmt välkommen att höra av dig.
-        / DealerPro`,
+Ditt avtal är nu klart att läsas och signeras. Klicka på länken nedan:
+${publicLink}
+Har du några frågor är du varmt välkommen att höra av dig.
+/ DealerPro`,
           },
           {
             headers: {
@@ -553,85 +697,109 @@ const AgreementSign = () => {
           }
         );
 
-
         if (response.data.success) {
-          toast.success("BankID link sent to your phone!");
+          toast.success(
+            "BankID link sent to your phone!"
+          );
+
           setShowVerificationOptions(false);
 
-          // Start polling for status
           if (orderRef) {
             const pollStatus = async () => {
               try {
-                const statusResponse = await makePostRequest(
-                  "banksign/status",
-                  {
-                    orderRef: orderRef,
-                  }
-                );
-
-                console.log("Phone verification status:", statusResponse.data);
+                const statusResponse =
+                  await makePostRequest(
+                    "banksign/status",
+                    {
+                      orderRef,
+                    }
+                  );
 
                 if (
                   statusResponse.data.success &&
-                  statusResponse.data.bankIdStatus?.Response?.Status ===
-                  "complete"
+                  statusResponse.data.bankIdStatus
+                    ?.Response?.Status ===
+                    "complete"
                 ) {
                   setSigningStatus("approved");
-                  toast.success("Signing approved successfully!");
+
+                  toast.success(
+                    "Signing approved successfully!"
+                  );
+
                   clearPolling();
+
                   handleDownloadVerifikat();
                 } else if (
-                  statusResponse.data.bankIdStatus?.Response?.Status ===
-                  "failed" ||
-                  statusResponse.data.bankIdStatus?.Response?.Status ===
-                  "cancelled"
+                  statusResponse.data.bankIdStatus
+                    ?.Response?.Status ===
+                    "failed" ||
+                  statusResponse.data.bankIdStatus
+                    ?.Response?.Status ===
+                    "cancelled"
                 ) {
                   setSigningStatus(null);
+
                   toast.error(
                     "Signing failed or was cancelled. Please try again."
                   );
+
                   clearPolling();
                 } else {
                   setSigningStatus("pending");
                 }
               } catch (statusError) {
-                console.error("Error checking signing status:", statusError);
+                console.error(
+                  "Error checking signing status:",
+                  statusError
+                );
+
                 setSigningStatus("pending");
               }
             };
 
-            // Set status to pending first
             setSigningStatus("pending");
 
-            // Clear any existing polling
             clearPolling();
 
-            // Start polling without initial immediate call
-            pollingIntervalRef.current = setInterval(
-              pollStatus,
-              3000
-            ) as unknown as number;
+            pollingIntervalRef.current =
+              setInterval(
+                pollStatus,
+                3000
+              ) as unknown as number;
           }
         } else {
-          toast.error(response.data.message || "Failed to send SMS");
+          toast.error(
+            response.data.message ||
+              "Failed to send SMS"
+          );
         }
       }
     } catch (error) {
-      console.error("Error sending SMS:", error);
-      toast.error("Failed to send SMS. Please try again.");
+      console.error(
+        "Error sending SMS:",
+        error
+      );
+
+      toast.error(
+        "Failed to send SMS. Please try again."
+      );
     } finally {
       setIsSigning(false);
     }
   };
 
+  // ============================================================
+  // EMAIL VERIFICATION
+  // ============================================================
   const handleVerifyWithEmail = async () => {
-    // For public access, use customer email from agreement data
-    const targetEmail = isPublicAccess ? agreementData?.dataValues.email : user?.email;
-    const targetEmail2 = isPublicAccess ? agreementData?.dataValues.email : agreementData?.dataValues.email;
+    const targetEmail = isPublicAccess
+      ? agreementData?.dataValues.email
+      : user?.email;
 
-    console.log("=============================")
-    console.log(targetEmail2)
-    console.log("=============================")
+    const targetEmail2 = isPublicAccess
+      ? agreementData?.dataValues.email
+      : agreementData?.dataValues.email;
 
     if (!targetEmail) {
       toast.error("No email found");
@@ -640,97 +808,158 @@ const AgreementSign = () => {
 
     try {
       setIsSigning(true);
-      const response = await makePostRequest("email/send-bankid-link", {
-        email: targetEmail2,
-        link: bankIdUrl,
-        ...(isPublicAccess && { accessToken, publicAccess: true }),
-      });
+
+      const response = await makePostRequest(
+        "email/send-bankid-link",
+        {
+          email: targetEmail2,
+
+          link: bankIdUrl,
+
+          ...(isPublicAccess && {
+            accessToken,
+            publicAccess: true,
+          }),
+        }
+      );
 
       if (response.data.success) {
-        toast.success("BankID link sent to your email!");
+        toast.success(
+          "BankID link sent to your email!"
+        );
+
         setShowVerificationOptions(false);
 
         if (orderRef) {
           const pollStatus = async () => {
             try {
-              const statusResponse = await makePostRequest("banksign/status", {
-                orderRef: orderRef,
-              });
-
-              console.log("Email verification status:", statusResponse.data);
+              const statusResponse =
+                await makePostRequest(
+                  "banksign/status",
+                  {
+                    orderRef,
+                  }
+                );
 
               if (
                 statusResponse.data.success &&
-                statusResponse.data.bankIdStatus?.Response?.Status ===
-                "complete"
+                statusResponse.data.bankIdStatus
+                  ?.Response?.Status ===
+                  "complete"
               ) {
                 setSigningStatus("approved");
-                toast.success("Signing approved successfully!");
+
+                toast.success(
+                  "Signing approved successfully!"
+                );
+
                 clearPolling();
+
                 handleDownloadVerifikat();
               } else if (
-                statusResponse.data.bankIdStatus?.Response?.Status ===
-                "failed" ||
-                statusResponse.data.bankIdStatus?.Response?.Status ===
-                "cancelled"
+                statusResponse.data.bankIdStatus
+                  ?.Response?.Status ===
+                  "failed" ||
+                statusResponse.data.bankIdStatus
+                  ?.Response?.Status ===
+                  "cancelled"
               ) {
                 setSigningStatus(null);
+
                 toast.error(
                   "Signing failed or was cancelled. Please try again."
                 );
+
                 clearPolling();
               } else {
                 setSigningStatus("pending");
               }
             } catch (statusError) {
-              console.error("Error checking signing status:", statusError);
+              console.error(
+                "Error checking signing status:",
+                statusError
+              );
+
               setSigningStatus("pending");
             }
           };
 
-          // Set status to pending first
           setSigningStatus("pending");
 
-          // Clear any existing polling
           clearPolling();
 
-          // Start polling without initial immediate call
-          pollingIntervalRef.current = setInterval(
-            pollStatus,
-            3000
-          ) as unknown as number;
+          pollingIntervalRef.current =
+            setInterval(
+              pollStatus,
+              3000
+            ) as unknown as number;
         }
       } else {
-        toast.error(response.data.message || "Failed to send email");
+        toast.error(
+          response.data.message ||
+            "Failed to send email"
+        );
       }
     } catch (error) {
-      console.error("Error sending email:", error);
-      toast.error("Failed to send email. Please try again.");
+      console.error(
+        "Error sending email:",
+        error
+      );
+
+      toast.error(
+        "Failed to send email. Please try again."
+      );
     } finally {
       setIsSigning(false);
     }
   };
 
+  // ============================================================
+  // LOADING SCREEN
+  // ============================================================
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 font-plus-jakarta flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-700">Loading agreement data...</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 font-plus-jakarta dark:bg-[#070d19]">
+        <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-[#0b1120]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+            <Loader2 className="h-6 w-6 animate-spin" />
+          </div>
+
+          <h2 className="mt-5 text-base font-bold text-slate-900 dark:text-white">
+            Loading Agreement
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Please wait while we securely load your agreement.
+          </p>
         </div>
       </div>
     );
   }
 
+  // ============================================================
+  // ERROR SCREEN
+  // ============================================================
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 font-plus-jakarta flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-md text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-4">Error</h2>
-          <p className="text-gray-700 mb-6">{error}</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 font-plus-jakarta dark:bg-[#070d19]">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8 dark:border-slate-800 dark:bg-[#0b1120]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+            <AlertCircle className="h-6 w-6" />
+          </div>
+
+          <h2 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+            Unable to Load Agreement
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+            {error}
+          </p>
+
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white transition-all hover:bg-blue-700"
           >
             Go Back
           </button>
@@ -739,19 +968,29 @@ const AgreementSign = () => {
     );
   }
 
+  // ============================================================
+  // EMPTY STATE
+  // ============================================================
   if (!agreementData) {
     return (
-      <div className="min-h-screen bg-gray-100 font-plus-jakarta flex items-center justify-center">
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-md text-center">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 font-plus-jakarta dark:bg-[#070d19]">
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8 dark:border-slate-800 dark:bg-[#0b1120]">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+            <FileCheck2 className="h-6 w-6" />
+          </div>
+
+          <h2 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
             No Agreement Found
           </h2>
-          <p className="text-gray-700 mb-6">
+
+          <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
             The requested agreement could not be loaded.
           </p>
+
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white transition-all hover:bg-blue-700"
           >
             Go Back
           </button>
@@ -760,178 +999,395 @@ const AgreementSign = () => {
     );
   }
 
-  const isDisabled = !(termsChecked && gdprChecked);
+  const isDisabled =
+    !(termsChecked && gdprChecked);
+
+  const vehicleNumber =
+    agreementData?.dataValues?.registrationNumber ||
+    agreementData?.registrationNumber ||
+    "N/A";
+
+  const agreementType =
+    agreementData?.dataValues?.type ||
+    agreementData?.type ||
+    "Agreement";
 
   return (
-    <div className="min-h-screen bg-gray-100 font-plus-jakarta">
-      <div className="bg-white border-b border-gray-200 lg:p-6 p-4">
-        <div className="flex items-center justify-between max-w-full">
-          {/* <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-              <Shield className="w-5 h-5 text-white" />
+    <div className="min-h-screen bg-slate-50 font-plus-jakarta text-slate-900 dark:bg-[#070d19] dark:text-white">
+      {/* ========================================================
+          TOP HEADER
+      ======================================================== */}
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl dark:border-slate-800 dark:bg-[#0b1120]/95">
+        <div className="mx-auto flex min-h-[72px] w-full max-w-[1600px] items-center justify-between gap-3 px-3 sm:px-5 lg:px-8">
+          {/* Brand */}
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 shadow-sm shadow-blue-600/20">
+              <Shield className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-semibold text-gray-800">
-              DealerPro
-            </span>
-          </div> */}
-          <div className="md:flex hidden gap-3 justify-center">
+
+            <div className="hidden min-w-0 sm:block">
+              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                DealerPro
+              </p>
+
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Secure Agreement Signing
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop actions */}
+          <div className="hidden items-center gap-2 md:flex">
             <button
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+              type="button"
               onClick={handleDownload}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             >
-              <Download className="w-4 h-4" />
+              <Download className="h-4 w-4" />
               Download PDF
             </button>
+
             {!isPublicAccess && (
               <button
-                className="flex items-center gap-2 px-4 py-2 border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
                 onClick={handleGeneratePublicLink}
                 disabled={isGeneratingPublicLink}
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-xs font-semibold text-blue-700 transition-all hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20"
               >
                 {isGeneratingPublicLink ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Link className="w-4 h-4" />
+                  <Link className="h-4 w-4" />
                 )}
-                {isGeneratingPublicLink ? "Generating..." : "Copy Public Link"}
+
+                {isGeneratingPublicLink
+                  ? "Generating..."
+                  : "Copy Public Link"}
               </button>
             )}
           </div>
-          <div className="flex items-center gap-5">
-            <p className="text-gray-800 text-lg text-center">
-              Vehicle: {(agreementData?.dataValues?.registrationNumber || agreementData?.registrationNumber || "N/A")}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-            <CheckCircle className="w-4 h-4" />
-            Secure Environment
+
+          {/* Vehicle + secure status */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:block dark:border-slate-800 dark:bg-slate-900">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                Vehicle
+              </p>
+
+              <p className="mt-0.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                {vehicleNumber}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+
+              <span className="hidden text-[11px] font-bold text-emerald-700 sm:inline dark:text-emerald-400">
+                Secure
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-full lg:p-6 p-4">
-        {/* Show link expiry warning for public access */}
-        {isPublicAccess && expiryTime && !isLinkExpired && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-3">
-              <Shield className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-              <div className="flex-1">
-                <h4 className="font-medium text-yellow-800">
-                  Temporary Signing Link
-                </h4>
-                <div className="text-yellow-700 text-sm mt-1">
-                  <p className="mb-1">
-                    This link will expire on{" "}
-                    {new Date(parseInt(expiryTime) * 1000).toLocaleString()}.
+      {/* ========================================================
+          PAGE
+      ======================================================== */}
+      <main className="mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+        {/* Mobile actions */}
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 md:hidden">
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 shadow-sm dark:border-slate-800 dark:bg-[#0b1120] dark:text-slate-300"
+          >
+            <Download className="h-4 w-4" />
+            Download PDF
+          </button>
+
+          {!isPublicAccess && (
+            <button
+              type="button"
+              onClick={handleGeneratePublicLink}
+              disabled={isGeneratingPublicLink}
+              className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 text-xs font-semibold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400"
+            >
+              {isGeneratingPublicLink ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link className="h-4 w-4" />
+              )}
+
+              {isGeneratingPublicLink
+                ? "Generating..."
+                : "Copy Public Link"}
+            </button>
+          )}
+        </div>
+
+        {/* ======================================================
+            PUBLIC LINK EXPIRY
+        ====================================================== */}
+        {isPublicAccess &&
+          expiryTime &&
+          !isLinkExpired && (
+            <div className="mb-5 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 dark:border-amber-500/20 dark:from-amber-500/10 dark:to-yellow-500/5">
+              <div className="flex items-start gap-3 p-4 sm:p-5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+                  <Clock3 className="h-5 w-5" />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="text-sm font-bold text-amber-900 dark:text-amber-300">
+                      Temporary Signing Link
+                    </h3>
+
+                    <span className="w-fit rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                      Expires soon
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-xs leading-5 text-amber-800/80 dark:text-amber-300/70">
+                    This secure signing link expires on{" "}
+                    {new Date(
+                      parseInt(expiryTime) * 1000
+                    ).toLocaleString()}.
                   </p>
-                  <p className="font-semibold">
-                    {remainingTimeText || formatRemainingTime(expiryTime)}
-                  </p>
+
+                  <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs font-bold text-amber-800 dark:bg-slate-900/50 dark:text-amber-300">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {remainingTimeText ||
+                      formatRemainingTime(expiryTime)}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="lg:p-6 p-3 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Agreement Preview
-            </h2>
-          </div>
-
-          <div className="flex md:hidden gap-3 justify-center mt-3">
-            <button
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
-              onClick={handleDownload}
-            >
-              <Download className="w-4 h-4" />
-              Download PDF
-            </button>
-          </div>
-
-          <div className="lg:p-6 px-3">
-            <div
-              ref={pdfRef}
-              className="bg-white p-4 sm:p-6 md:p-8 font-plus-jakarta"
-              style={{ maxWidth: "800px", margin: "0 auto" }}
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                <div>
-                  <img src={pdfLogo} alt="" />
+        {/* ======================================================
+            AGREEMENT CARD
+        ====================================================== */}
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0b1120]">
+          {/* Section heading */}
+          <div className="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5 dark:border-slate-800">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                  <FileCheck2 className="h-5 w-5" />
                 </div>
-                <div className="flex flex-col gap-1 items-end">
-                  <p>{agreementData?.dataValues?.type || "N/A"}</p>
-                  <p className="text-xs">Kontrakts nr. {agreementData.id}</p>
+
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 sm:text-lg dark:text-white">
+                    Agreement Preview
+                  </h2>
+
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    {agreementType} · Contract #{agreementData.id}
+                  </p>
                 </div>
               </div>
 
-              {/* Check for both agreementData and its type property */}
-              {(agreementData?.dataValues?.type || agreementData?.type) === "Sales Agreement" ? (
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+                <LockKeyhole className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+
+                <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                  Secure Document
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ====================================================
+              PDF / AGREEMENT PREVIEW
+          ==================================================== */}
+          <div className="bg-slate-100/70 p-2 sm:p-4 lg:p-6 dark:bg-[#070d19]">
+            <div
+              ref={pdfRef}
+              className="mx-auto w-full max-w-[800px] overflow-hidden bg-white p-4 shadow-sm sm:p-6 md:p-8"
+            >
+              {/* PDF Header */}
+              <div className="grid grid-cols-1 items-center gap-5 sm:grid-cols-2">
+                <div className="max-w-[180px]">
+                  <img
+                    src={pdfLogo}
+                    alt="DealerPro"
+                    className="max-h-14 w-auto object-contain"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 sm:items-end">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {agreementType}
+                  </p>
+
+                  <p className="text-xs text-slate-500">
+                    Contract No. {agreementData.id}
+                  </p>
+
+                  <p className="text-xs text-slate-500">
+                    Vehicle: {vehicleNumber}
+                  </p>
+                </div>
+              </div>
+
+              {/* ==================================================
+                  CUSTOMER / SELLER
+              ================================================== */}
+              {(agreementData?.dataValues?.type ||
+                agreementData?.type) ===
+              "Sales Agreement" ? (
                 <>
-                  <div className="mt-3 overflow-x-auto">
-                    <p>Säljare</p>
-                    <AuthUserInfo agreementData={agreementData} user={user} />
+                  <div className="mt-5 overflow-x-auto">
+                    <p className="mb-2 text-sm font-semibold text-slate-800">
+                      Seller
+                    </p>
+
+                    <AuthUserInfo
+                      agreementData={agreementData}
+                      user={user}
+                    />
                   </div>
-                  <div className="mt-3 overflow-x-auto">
-                    <p>Köpare</p>
-                    <CustomerInfo agreementData={agreementData} />
+
+                  <div className="mt-5 overflow-x-auto">
+                    <p className="mb-2 text-sm font-semibold text-slate-800">
+                      Buyer
+                    </p>
+
+                    <CustomerInfo
+                      agreementData={agreementData}
+                    />
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="mt-3 overflow-x-auto">
-                    <p>Köpare</p>
-                    <AuthUserInfo agreementData={agreementData} user={user} />
+                  <div className="mt-5 overflow-x-auto">
+                    <p className="mb-2 text-sm font-semibold text-slate-800">
+                      Buyer
+                    </p>
+
+                    <AuthUserInfo
+                      agreementData={agreementData}
+                      user={user}
+                    />
                   </div>
-                  <div className="mt-3 overflow-x-auto">
-                    <p>Säljare</p>
-                    <CustomerInfo agreementData={agreementData} />
+
+                  <div className="mt-5 overflow-x-auto">
+                    <p className="mb-2 text-sm font-semibold text-slate-800">
+                      Seller
+                    </p>
+
+                    <CustomerInfo
+                      agreementData={agreementData}
+                    />
                   </div>
                 </>
               )}
 
-              <Fordon agreementData={agreementData} />
-              {/* Check for both agreementData and its type property */}
-              {(agreementData?.dataValues?.type || agreementData?.type) === "Sales Agreement" && (
-                <Leveransvilkor agreementData={agreementData} />
-              )}
-              <Pris agreementData={agreementData} />
-
-              <div className="mt-5 flex flex-col gap-1">
-                <p>Underskrifter</p>
-                <p className="text-xs">Plats och tid </p>
+              {/* Vehicle */}
+              <div className="mt-5 overflow-x-auto">
+                <Fordon
+                  agreementData={agreementData}
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-16 mt-16">
-                <div className="border-t border-gray-300 pt-2">
-                  <p className="text-xs">Säljarens signatur och namn </p>
+              {/* Delivery */}
+              {(agreementData?.dataValues?.type ||
+                agreementData?.type) ===
+                "Sales Agreement" && (
+                <div className="mt-5 overflow-x-auto">
+                  <Leveransvilkor
+                    agreementData={agreementData}
+                  />
                 </div>
-                <div className="border-t border-gray-300 pt-2">
-                  <p className="text-xs">Köparens underskrift</p>
+              )}
+
+              {/* Price */}
+              <div className="mt-5 overflow-x-auto">
+                <Pris
+                  agreementData={agreementData}
+                />
+              </div>
+
+              {/* Signatures */}
+              <div className="mt-7">
+                <p className="text-sm font-semibold text-slate-900">
+                  Signatures
+                </p>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Place and time
+                </p>
+              </div>
+
+              <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-2 sm:gap-16">
+                <div className="border-t border-slate-300 pt-2">
+                  <p className="text-xs text-slate-600">
+                    Seller's signature and name
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-300 pt-2">
+                  <p className="text-xs text-slate-600">
+                    Buyer's signature
+                  </p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* ====================================================
+              QR CODE
+          ==================================================== */}
           {showQR && (
-            <div className="flex justify-center">
-              <img src={showQR} alt="BankID QR Code" />
+            <div className="border-t border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="mx-auto max-w-sm rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm dark:border-slate-700 dark:bg-[#0b1120]">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                  <Signature className="h-5 w-5" />
+                </div>
+
+                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white">
+                  Scan with BankID
+                </h3>
+
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Scan this QR code with your BankID app to continue.
+                </p>
+
+                <div className="mt-4 flex justify-center">
+                  <img
+                    src={showQR}
+                    alt="BankID QR Code"
+                    className="h-52 w-52 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-700"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="lg:p-6 p-4 border-t border-gray-100">
-            {/* Only show signing options for logged-in users */}
-
+          {/* ====================================================
+              SIGNING AREA
+          ==================================================== */}
+          <div className="border-t border-slate-200 p-4 sm:p-6 dark:border-slate-800">
             <AgreementInformation
               setSelect1={setSelect1}
               setSelect2={setSelect2}
               agreementData={{
                 ...agreementData,
-                type: agreementData?.dataValues?.type || agreementData?.type || "N/A",
+
+                type:
+                  agreementData?.dataValues?.type ||
+                  agreementData?.type ||
+                  "N/A",
+
                 dataValues: {
                   ...agreementData?.dataValues,
-                  type: agreementData?.dataValues?.type || agreementData?.type || "N/A"
-                }
+
+                  type:
+                    agreementData?.dataValues?.type ||
+                    agreementData?.type ||
+                    "N/A",
+                },
               }}
               user={user}
               publicAccess={isPublicAccess}
@@ -940,192 +1396,231 @@ const AgreementSign = () => {
               Signature={Signature}
               approved={signingStatus}
               handleBankSign={handleBankSign}
-              handleVerifyWithEmail={handleVerifyWithEmail}
-              handleVerifyWithPhone={handleVerifyWithPhone}
+              handleVerifyWithEmail={
+                handleVerifyWithEmail
+              }
+              handleVerifyWithPhone={
+                handleVerifyWithPhone
+              }
               select1={select1}
               select2={select2}
               isSigning={isSigning}
             />
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Terms and Conditions
-            </h3>
-            <div className="space-y-3 mb-6">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsChecked}
-                  onChange={(e) => setTermsChecked(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-700">
-                  I have read and accept the{" "}
-                  <a
-                    href="#"
-                    className="text-blue-600 underline hover:text-blue-700"
-                  >
-                    general terms and conditions
-                  </a>{" "}
-                  for digital signing
-                </span>
-              </label>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={gdprChecked}
-                  onChange={(e) => setGdprChecked(e.target.checked)}
-                  className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-gray-700">
-                  I consent to the{" "}
-                  <a
-                    href="#"
-                    className="text-blue-600 underline hover:text-blue-700"
-                  >
-                    processing of personal data
-                  </a>{" "}
-                  according to GDPR
-                </span>
-              </label>
+
+            {/* ==================================================
+                TERMS
+            ================================================== */}
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                  <Shield className="h-4 w-4" />
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Terms & Conditions
+                  </h3>
+
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    Please confirm both items before signing.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-transparent p-2 transition-colors hover:bg-white dark:hover:bg-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={termsChecked}
+                    onChange={(e) =>
+                      setTermsChecked(
+                        e.target.checked
+                      )
+                    }
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+                  />
+
+                  <span className="text-xs leading-5 text-slate-600 sm:text-sm dark:text-slate-300">
+                    I have read and accept the{" "}
+                    <a
+                      href="#"
+                      className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      general terms and conditions
+                    </a>{" "}
+                    for digital signing.
+                  </span>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-transparent p-2 transition-colors hover:bg-white dark:hover:bg-slate-800">
+                  <input
+                    type="checkbox"
+                    checked={gdprChecked}
+                    onChange={(e) =>
+                      setGdprChecked(
+                        e.target.checked
+                      )
+                    }
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
+                  />
+
+                  <span className="text-xs leading-5 text-slate-600 sm:text-sm dark:text-slate-300">
+                    I consent to the{" "}
+                    <a
+                      href="#"
+                      className="font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400"
+                    >
+                      processing of personal data
+                    </a>{" "}
+                    according to GDPR.
+                  </span>
+                </label>
+              </div>
             </div>
 
+            {/* ==================================================
+                SIGNING STATUS
+            ================================================== */}
             {signingStatus && (
               <div
-                className={`my-4 p-3 rounded-lg text-center ${signingStatus === "approved"
-                    ? "bg-green-50 text-green-700 border border-green-200"
-                    : "bg-yellow-50 text-yellow-700 border border-yellow-200"
-                  }`}
+                className={`mt-5 overflow-hidden rounded-2xl border ${
+                  signingStatus === "approved"
+                    ? "border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10"
+                    : "border-amber-200 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10"
+                }`}
               >
-                <div className="flex items-center justify-center gap-2">
-                  {signingStatus === "approved" ? (
-                    <>
-                      <CheckCircle className="w-5 h-5" />
-                      <span className="font-medium">Approved</span>
-                    </>
-                  ) : (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span className="font-medium">
-                        Waiting for signature...
-                      </span>
-                    </>
-                  )}
-                </div>
-                {signingStatus === "pending" && (
-                  <div className="mt-2 text-sm">
-                    <p>
-                      Please complete the signing process in your BankID app.
-                    </p>
-                    <p className="text-xs mt-1 text-yellow-600">
-                      Automatically checking status every 3 seconds...
-                    </p>
-                    <button
-                      onClick={cancelSigning}
-                      className="mt-3 px-4 py-2 text-sm bg-red-100 text-red-700 border border-red-200 rounded-md hover:bg-red-200 transition-colors"
+                <div className="p-4 sm:p-5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                        signingStatus === "approved"
+                          ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
+                          : "bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                      }`}
                     >
-                      Cancel Signing
-                    </button>
+                      {signingStatus ===
+                      "approved" ? (
+                        <CheckCircle className="h-5 w-5" />
+                      ) : (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      )}
+                    </div>
+
+                    <div>
+                      <h4
+                        className={`text-sm font-bold ${
+                          signingStatus ===
+                          "approved"
+                            ? "text-emerald-800 dark:text-emerald-300"
+                            : "text-amber-800 dark:text-amber-300"
+                        }`}
+                      >
+                        {signingStatus ===
+                        "approved"
+                          ? "Signing Approved"
+                          : "Waiting for Signature"}
+                      </h4>
+
+                      <p
+                        className={`mt-0.5 text-xs ${
+                          signingStatus ===
+                          "approved"
+                            ? "text-emerald-700/80 dark:text-emerald-300/70"
+                            : "text-amber-700/80 dark:text-amber-300/70"
+                        }`}
+                      >
+                        {signingStatus ===
+                        "approved"
+                          ? "The agreement has been successfully signed."
+                          : "Complete the signing process in your BankID app."}
+                      </p>
+                    </div>
                   </div>
-                )}
-                {signingStatus === "approved" && (
-                  <div className="mt-2">
+
+                  {signingStatus ===
+                    "pending" && (
+                    <div className="mt-4 border-t border-amber-200 pt-4 dark:border-amber-500/20">
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        Automatically checking signing status every 3 seconds...
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={cancelSigning}
+                        className="mt-3 inline-flex min-h-[38px] items-center justify-center rounded-lg border border-red-200 bg-red-50 px-4 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400"
+                      >
+                        Cancel Signing
+                      </button>
+                    </div>
+                  )}
+
+                  {signingStatus ===
+                    "approved" && (
                     <button
-                      onClick={() => navigate("/agreements")}
-                      className="text-sm text-green-700 underline hover:text-green-800"
+                      type="button"
+                      onClick={() =>
+                        navigate("/agreements")
+                      }
+                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 underline underline-offset-2 hover:text-emerald-800 dark:text-emerald-400"
                     >
                       View signed agreement
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
-            <div className="flex gap-4 justify-center">
+            {/* ==================================================
+                FOOTER ACTIONS
+            ================================================== */}
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
-                disabled={isDisabled || isSigning}
-                className={`px-6 py-3 rounded-md font-medium border transition-colors cursor-pointer ${isDisabled || isSigning
-                    ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                type="button"
+                disabled={
+                  isDisabled || isSigning
+                }
                 onClick={() => navigate(-1)}
+                className={`flex min-h-[46px] items-center justify-center rounded-xl border px-6 text-sm font-semibold transition-all ${
+                  isDisabled || isSigning
+                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-600"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
               >
                 Close
               </button>
-              {/* <button
-                disabled={isDisabled || isSigning}
-                className={`flex items-center gap-2 px-6 py-3 rounded-md font-medium transition-colors cursor-pointer ${
-                  isDisabled || isSigning
-                    ? "bg-blue-300 text-white cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-                onClick={() => handleBankSign()}
-              >
-                {isSigning ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Shield className="w-4 h-4" />
-                )}
-                Sign with BankID
-              </button> */}
 
-              {/* <button
-                disabled={isDisabled || isSigning}
-                className={`flex items-center gap-2 px-6 py-3 rounded-md font-medium transition-colors cursor-pointer ${
-                  isDisabled || isSigning
-                    ? "bg-blue-300 text-white cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
-                onClick={() => {
-                  // For public access, use QR code by default for better UX
-                  if (isPublicAccess) {
-                    handleBankSign(true);
-                    return;
-                  }
-
-                  // For logged-in users, use selected method
-                  if (select1 === "denna-enhet" || select2 === "denna-enhet") {
-                    handleVerifyWithPhone();
-                  } else if (
-                    select1 === "e-postlänk" ||
-                    select2 === "e-postlänk"
-                  ) {
-                    handleVerifyWithEmail();
-                  } else if (select1 === "qr-kod" || select2 === "qr-kod") {
-                    handleBankSign(true);
-                  } else {
-                    handleBankSign();
-                  }
-                }}
-              >
-                {isSigning ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Shield className="w-4 h-4" />
-                )}
-                <Signature strokeWidth="1.5" />
-                Signera
-              </button> */}
+              {/* Existing signing controls are intentionally handled
+                  by AgreementInformation above. */}
             </div>
 
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            {/* ==================================================
+                SECURITY INFO
+            ================================================== */}
+            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/20 dark:bg-blue-500/10 sm:p-5">
               <div className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="font-medium text-blue-800">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                  <LockKeyhole className="h-4 w-4" />
+                </div>
+
+                <div className="min-w-0">
+                  <h4 className="text-sm font-bold text-blue-900 dark:text-blue-300">
                     {isPublicAccess
                       ? "Secure Public Signing"
-                      : "Secure Signing with BankID and E-signature"}
+                      : "Secure BankID & E-Signature"}
                   </h4>
-                  <p className="text-blue-700 text-sm mt-1">
+
+                  <p className="mt-1 text-xs leading-5 text-blue-800/80 dark:text-blue-300/70">
                     {isPublicAccess
-                      ? "Your signature is handled securely. After signing, you'll receive a verification certificate that can be downloaded."
-                      : "Your signature is handled securely and complies with Swedish legal standards."}
+                      ? "Your signature is handled securely. After signing, you will receive a verification certificate that can be downloaded."
+                      : "Your signature is handled securely and complies with applicable Swedish digital-signing standards."}
                   </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 };

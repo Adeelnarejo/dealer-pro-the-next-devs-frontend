@@ -1,61 +1,76 @@
-export const getProfileInitials = (firstName: string, lastName: string) => {
-  const firstInitial = firstName ? firstName.charAt(0).toUpperCase() : "";
-  const secondInitial = lastName ? lastName.charAt(0).toUpperCase() : "";
-  return `${firstInitial}${secondInitial}`;
+/**
+ * Get user initials for profile avatars.
+ *
+ * Example:
+ * getProfileInitials("John", "Doe") => "JD"
+ */
+export const getProfileInitials = (
+  firstName = "",
+  lastName = ""
+): string => {
+  const firstInitial = firstName.trim().charAt(0).toUpperCase();
+  const lastInitial = lastName.trim().charAt(0).toUpperCase();
+
+  return `${firstInitial}${lastInitial}` || "U";
 };
 
-export const getRandomColor = (userId: number) => {
+/**
+ * Get a consistent avatar color based on the user's ID.
+ *
+ * The same user will always receive the same color.
+ */
+export const getRandomColor = (userId: number | string = 0): string => {
   const colors = [
-    "#FF6633",
-    "#FFB399",
-    "#FF33FF",
-    "#FFFF99",
-    "#00B3E6",
-    "#E6B333",
-    "#3366E6",
-    "#999966",
-    "#99FF99",
-    "#B34D4D",
-    "#80B300",
-    "#809900",
-    "#E6B3B3",
-    "#6680B3",
-    "#66991A",
-    "#FF99E6",
-    "#CCFF1A",
-    "#FF1A66",
-    "#E6331A",
-    "#33FFCC",
-    "#66994D",
-    "#B366CC",
-    "#4D8000",
-    "#B33300",
-    "#CC80CC",
-    "#66664D",
-    "#991AFF",
-    "#E666FF",
-    "#4DB3FF",
-    "#1AB399",
-    "#E666B3",
-    "#33991A",
-    "#CC9999",
-    "#B3B31A",
-    "#00E680",
-    "#4D8066",
-    "#809980",
-    "#E6FF80",
-    "#1AFF33",
-    "#999933",
-    "#FF3380",
-    "#CCCC00",
-    "#66E64D",
-    "#4D80CC",
-    "#9900B3",
-    "#E64D66",
-    "#4DB380",
-    "#FF4D4D",
-    "#99E6E6",
-    "#6666FF",
+    "#2563EB",
+    "#1D4ED8",
+    "#4F46E5",
+    "#7C3AED",
+    "#9333EA",
+    "#C026D3",
+    "#DB2777",
+    "#E11D48",
+    "#DC2626",
+    "#EA580C",
+    "#D97706",
+    "#CA8A04",
+    "#65A30D",
+    "#16A34A",
+    "#059669",
+    "#0D9488",
+    "#0891B2",
+    "#0284C7",
+    "#0369A1",
+    "#475569",
   ];
-  return colors[userId % colors.length];
+
+  const numericId =
+    typeof userId === "number"
+      ? userId
+      : Number.parseInt(userId, 10) || 0;
+
+  const index =
+    Math.abs(numericId) % colors.length;
+
+  return colors[index];
+};
+
+/**
+ * Get a complete profile display name.
+ */
+export const getProfileName = (
+  firstName = "",
+  lastName = ""
+): string => {
+  const name = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+  return name || "User";
+};
+
+/**
+ * Get a safe email display value.
+ */
+export const getProfileEmail = (
+  email = ""
+): string => {
+  return email.trim() || "No email available";
 };

@@ -1,188 +1,280 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { makeGetRequest, makePostRequest } from "../../api/Api";
-import { Loader2, AlertCircle } from "lucide-react";
-import toast from "react-hot-toast";
-import { useUserProfile } from "../../utils/useUserProfile";
 import {
-  InfoCircleIcon,
-  RemoveLineAltIcon,
-  PaymentReceiptIcon,
-  AddPaymentsBackArrowIcon,
-} from "../../components/utils/Icons";
-import { BACKEND_API_ENDPOINT } from "../../api/config";
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  ReceiptText,
+  Search,
+  Trash2,
+  UserRound,
+  WalletCards,
+} from "lucide-react";
+import toast from "react-hot-toast";
+
+import { makeGetRequest, makePostRequest } from "../../api/Api";
 
 interface AmountRow {
   amount: string;
   description: string;
 }
 
-const initialAmount: AmountRow = { amount: "", description: "" };
+interface PersonAddress {
+  street?: string;
+  address?: string;
+  zip?: string;
+  postalCode?: string;
+  postal_code?: string;
+  city?: string;
+}
 
-type SearchResult = { data?: any[] } | null;
+interface PersonName {
+  firstName?: string;
+  lastName?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+}
 
-const AddPayments = () => {
-  const { user, loading: profileLoading } = useUserProfile();
+interface PersonResult {
+  id?: string | number;
+  personId?: string | number;
+  ssn?: string;
+  socialSecurityNumber?: string;
+  social_security_number?: string;
+  email?: string;
+  phone?: string;
+  telephone?: string;
+  telephoneNumber?: string;
+  name?: string;
+  personName?: PersonName;
+  address?: PersonAddress | string;
+}
+
+interface SearchResponse {
+  data?: PersonResult[];
+  results?: PersonResult[];
+  persons?: PersonResult[];
+  agreements?: PersonResult[];
+  message?: string;
+}
+
+interface Company {
+  company_name?: string;
+  registrationNumber?: string;
+  phoneNumber?: string;
+  mailingAddress?: string;
+  postalCode?: string;
+  city?: string;
+  bankAccountNumber?: string;
+  iban_Bic?: string;
+  bicSwift?: string;
+  swish_Number?: string;
+  attachments?: string[];
+}
+
+interface PaymentForm {
+  reference: string;
+  name: string;
+  email: string;
+  category: string;
+  ssn: string;
+  telephone: string;
+  description: string;
+  amounts: AmountRow[];
+}
+
+const BACKEND_API_ENDPOINT =
+  import.meta.env.VITE_BACKEND_API_ENDPOINT || "http://localhost:5000/api/";
+
+const initialAmount: AmountRow = {
+  amount: "",
+  description: "",
+};
+
+const initialForm: PaymentForm = {
+  reference: "",
+  name: "",
+  email: "",
+  category: "",
+  ssn: "",
+  telephone: "",
+  description: "",
+  amounts: [{ ...initialAmount }],
+};
+
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-400 dark:focus:bg-slate-900 dark:focus:ring-blue-400/10";
+
+const labelClass =
+  "mb-2 block text-[12px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400";
+
+const cardClass =
+  "rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-colors dark:border-slate-800 dark:bg-[#0d1422]";
+
+const getPersonName = (person?: PersonResult | null) => {
+  if (!person) return "";
+
+  if (person.name) return person.name;
+
+  if (typeof person.personName === "string") {
+    return person.personName;
+  }
+
+  const first =
+    person.personName?.firstName || person.personName?.first_name || "";
+
+  const last =
+    person.personName?.lastName || person.personName?.last_name || "";
+
+  return `${first} ${last}`.trim();
+};
+
+const getPersonAddress = (person?: PersonResult | null) => {
+  if (!person?.address) return "";
+
+  if (typeof person.address === "string") {
+    return person.address;
+  }
+
+  return (
+    person.address.street ||
+    person.address.address ||
+    ""
+  );
+};
+
+const getPersonZip = (person?: PersonResult | null) => {
+  if (!person?.address || typeof person.address === "string") {
+    return "";
+  }
+
+  return (
+    person.address.zip ||
+    person.address.postalCode ||
+    person.address.postal_code ||
+    ""
+  );
+};
+
+const getPersonCity = (person?: PersonResult | null) => {
+  if (!person?.address || typeof person.address === "string") {
+    return "";
+  }
+
+  return person.address.city || "";
+};
+
+function AddPayments() {
   const navigate = useNavigate();
-  const receiptRef = useRef<HTMLDivElement>(null);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [showPrintView, setShowPrintView] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [company, setCompany] = useState<any>(null);
+  const [showPrintView, setShowPrintView] = useState(false);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const [company, setCompany] = useState<Company | null>(null);
   const [companyLoading, setCompanyLoading] = useState(true);
-  const [searchResults, setSearchResults] = useState<{
-    person: SearchResult;
-  }>({
-    person: null,
-  });
-  console.log(companyLoading, profileLoading);
-  const [form, setForm] = useState({
-    reference: "",
-    name: "",
-    customerNumber: "",
-    email: "",
-    category: "",
-    ssn: "",
-    telephone: "",
-    description: "",
-    amounts: [{ ...initialAmount }],
-  });
+
+  const [person, setPerson] = useState<PersonResult | null>(null);
+
+  const [form, setForm] = useState<PaymentForm>(initialForm);
 
   useEffect(() => {
     const savedForm = sessionStorage.getItem("paymentFormData");
+
     if (savedForm) {
-      setForm(JSON.parse(savedForm));
-      sessionStorage.removeItem("paymentFormData");
+      try {
+        const parsed = JSON.parse(savedForm);
+
+        setForm({
+          ...initialForm,
+          ...parsed,
+          amounts:
+            parsed.amounts?.length > 0
+              ? parsed.amounts
+              : [{ ...initialAmount }],
+        });
+      } catch {
+        sessionStorage.removeItem("paymentFormData");
+      }
     }
   }, []);
 
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
+  useEffect(() => {
+    const fetchCompany = async () => {
+      try {
+        setCompanyLoading(true);
 
-    // Name validation
-    // if (!form.name?.trim()) {
-    //   newErrors.name = "Name is required";
-    // }
+        const response = await makeGetRequest(
+          "companyDetail/getCompanyDetailByUser"
+        );
 
-    // SSN validation
-    if (!form.ssn?.trim()) {
-      newErrors.ssn = "Personnummer krävs";
-    }
+        const companyData =
+          response?.data?.data ||
+          response?.data ||
+          response;
 
-    // Telephone validation
-    if (!form.telephone?.trim()) {
-      newErrors.telephone = "Telefonnummer krävs";
-    } else if (form.telephone.trim().length < 6) {
-      newErrors.telephone = "Ange ett giltigt telefonnummer";
-    }
-
-    // Amount validation
-    let hasValidAmount = false;
-    form.amounts.forEach((amount, index) => {
-      const amountValue = parseFloat(amount.amount);
-      if (isNaN(amountValue) || amountValue <= 0) {
-        if (!newErrors.amounts) {
-          newErrors.amounts = `Amount ${index + 1} must be greater than 0`;
-        }
-      } else {
-        hasValidAmount = true;
+        setCompany(companyData || null);
+      } catch (error) {
+        console.error("Failed to load company details:", error);
+      } finally {
+        setCompanyLoading(false);
       }
-    });
+    };
 
-    if (!hasValidAmount && !newErrors.amounts) {
-      newErrors.amounts = "At least one valid amount is required";
-    }
+    fetchCompany();
+  }, []);
 
-    setErrors(newErrors);
-    console.log("Validation errors:", newErrors); // Debugging line
-    return Object.keys(newErrors).length === 0;
-  };
+  useEffect(() => {
+    if (!showPrintView) return;
 
-  const handleSearch = async (type: "PERSON", query: string) => {
-    if (!query.trim()) {
-      toast.error("Please enter a valid SSN to search");
-      return;
-    }
+    const timer = setTimeout(() => {
+      window.print();
 
-    setIsSearching(true);
-    try {
-      const response = await fetch(
-        `${BACKEND_API_ENDPOINT}agreements/external/agreements`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization:
-              "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXBhcnRtZW50X2lkIjoiMDAwMDA5M2UyNDY5YjNhOGJmMTQ4NGVmODA5MWEyM2MiLCJ1c2VyX25hbWUiOiIwMDA1Y2ViN2I0ZmJjNmI1YjRlMzNjMTdlNGM4NDAzZiIsImRlcGFydG1lbnRfbmFtZSI6IlZhbGl0aXZlIENyZWRpdCIsImF1dGhvcml0aWVzIjpbIlZMVFZfQ1JFRElUX1NFQVJDSF9ETyIsIlZBTElUSVZFX0FQSV9BQ0NFU1MiXSwiY2xpZW50X2lkIjoiSU5TX1BBUlRORVIiLCJhdWQiOlsiVkFMSVRJVkUiXSwidXNlcl9pZCI6IjAwMDVjZWI3YjRmYmM2YjViNGUzM2MxN2U0Yzg0MDNmIiwidXNlcl9yZWFsX25hbWUiOiJTYW1pciBLYXNzZW0iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUi",
-          },
-          body: JSON.stringify({
-            type,
-            query,
-          }),
-        }
+      setTimeout(() => {
+        setShowPrintView(false);
+      }, 500);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [showPrintView]);
+
+  const total = useMemo(() => {
+    return form.amounts.reduce((sum, item) => {
+      const amount = Number.parseFloat(
+        String(item.amount).replace(",", ".")
       );
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
+  }, [form.amounts]);
 
-      const data = await response.json();
-
-      setSearchResults((prev) => ({
-        ...prev,
-        [type.toLowerCase()]: data || null,
-      }));
-
-      // Update form with search results if found
-      if (data?.data?.[0]) {
-        const person = data.data[0];
-        setForm((prevForm) => ({
-          ...prevForm,
-          name: person.name?.givenName || prevForm.name,
-          telephone: person.telephone || prevForm.telephone,
-          email: person.email || prevForm.email,
-        }));
-
-        // Clear any previous errors for these fields
-        setErrors((prev) => ({
-          ...prev,
-          name: "",
-          telephone: "",
-          ssn: "",
-        }));
-
-        toast.success("Customer information retrieved successfully");
-      } else {
-        toast.error("No customer found with this SSN");
-        setErrors((prev) => ({
-          ...prev,
-          ssn: "No customer found with this SSN",
-        }));
-      }
-    } catch (error) {
-      console.error(`Error searching ${type}:`, error);
-      toast.error("Failed to search customer information");
-      setSearchResults((prev) => ({
-        ...prev,
-        [type.toLowerCase()]: null,
-      }));
-      setErrors((prev) => ({
-        ...prev,
-        ssn: "Error searching customer information",
-      }));
-    } finally {
-      setIsSearching(false);
-    }
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat("en-SE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
   };
 
   const handleChange = (
     e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
     if (errors[name]) {
       setErrors((prev) => ({
@@ -193,13 +285,21 @@ const AddPayments = () => {
   };
 
   const handleAmountChange = (
-    idx: number,
+    index: number,
     field: keyof AmountRow,
     value: string
   ) => {
-    const updated = [...form.amounts];
-    updated[idx][field] = value;
-    setForm({ ...form, amounts: updated });
+    setForm((prev) => ({
+      ...prev,
+      amounts: prev.amounts.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              [field]: value,
+            }
+          : item
+      ),
+    }));
 
     if (errors.amounts) {
       setErrors((prev) => ({
@@ -209,775 +309,1199 @@ const AddPayments = () => {
     }
   };
 
-  // const handleSSNSearch = async () => {
-  //   if (!form.ssn.trim()) {
-  //     toast.error("Please enter a SSN to search");
-  //     return;
-  //   }
-
-  //   setIsSearching(true);
-  //   try {
-  //     const response = await makeGetRequest(
-  //       `payments/getCustomerContactInfo/${form.ssn}`
-  //     );
-
-  //     if (response.data.success) {
-  //       const { customer_name, telephone_number } = response.data.data;
-  //       setForm({
-  //         ...form,
-  //         name: customer_name || "",
-  //         customerNumber: telephone_number || "",
-  //       });
-  //       toast.success("Customer information retrieved successfully");
-  //     } else {
-  //       toast.error(response.data.message || "No customer found with this SSN");
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Error searching SSN:", error);
-  //     toast.error(
-  //       error.response?.data?.message || "Failed to search customer information"
-  //     );
-  //   } finally {
-  //     setIsSearching(false);
-  //   }
-  // };
-
-  // const handleSSNSearch = async () => {
-  //   if (!form.ssn.trim()) {
-  //     toast.error("Please enter a SSN to search");
-  //     setErrors((prev) => ({ ...prev, ssn: "SSN is required" }));
-  //     return;
-  //   }
-
-  //   setIsSearching(true);
-  //   try {
-  //     const response = await makeGetRequest(
-  //       `payments/getCustomerContactInfo/${form.ssn}`
-  //     );
-
-  //     if (response.data.success) {
-  //       const { customer_name, telephone_number, email, customer_reference } =
-  //         response.data.data;
-  //       setForm({
-  //         ...form,
-  //         name: customer_name || "",
-  //         telephone: telephone_number || "",
-  //         email: email || form.email, // Keep existing if not provided
-  //         reference: customer_reference || form.reference, // Keep existing if not provided
-  //       });
-  //       // Clear any previous errors for these fields
-  //       setErrors((prev) => ({
-  //         ...prev,
-  //         name: "",
-  //         telephone: "",
-  //         ssn: "",
-  //       }));
-  //       toast.success("Customer information retrieved successfully");
-  //     } else {
-  //       toast.error(response.data.message || "No customer found with this SSN");
-  //       setErrors((prev) => ({
-  //         ...prev,
-  //         ssn: "No customer found with this SSN",
-  //       }));
-  //     }
-  //   } catch (error: any) {
-  //     console.error("Error searching SSN:", error);
-  //     toast.error(
-  //       error.response?.data?.message || "Failed to search customer information"
-  //     );
-  //     setErrors((prev) => ({
-  //       ...prev,
-  //       ssn: "Error searching customer information",
-  //     }));
-  //   } finally {
-  //     setIsSearching(false);
-  //   }
-  // };
-
   const addAmountRow = () => {
-    setForm({ ...form, amounts: [...form.amounts, { ...initialAmount }] });
+    setForm((prev) => ({
+      ...prev,
+      amounts: [
+        ...prev.amounts,
+        {
+          ...initialAmount,
+        },
+      ],
+    }));
   };
 
-  const removeAmountRow = (idx: number) => {
-    setForm({ ...form, amounts: form.amounts.filter((_, i) => i !== idx) });
+  const removeAmountRow = (index: number) => {
+    if (form.amounts.length === 1) return;
+
+    setForm((prev) => ({
+      ...prev,
+      amounts: prev.amounts.filter((_, i) => i !== index),
+    }));
   };
 
-  const total = form.amounts.reduce(
-    (sum, a) => sum + (parseFloat(a.amount) || 0),
-    0
-  );
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
 
-  const handlePrint = () => {
-    setShowPrintView(true);
-  };
-
-  useEffect(() => {
-    if (showPrintView) {
-      const timer = setTimeout(() => {
-        window.print();
-        setShowPrintView(false);
-      }, 300);
-
-      return () => clearTimeout(timer);
+    if (!form.ssn.trim()) {
+      newErrors.ssn = "SSN is required";
     }
-  }, [showPrintView]);
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast.error("Please fix the errors in the form");
+    if (!form.telephone.trim()) {
+      newErrors.telephone = "Phone number is required";
+    } else if (form.telephone.trim().length < 6) {
+      newErrors.telephone = "Enter a valid phone number";
+    }
+
+    if (!form.category) {
+      newErrors.category = "Select a payment category";
+    }
+
+    const hasValidAmount = form.amounts.some((item) => {
+      const amount = Number.parseFloat(
+        String(item.amount).replace(",", ".")
+      );
+
+      return Number.isFinite(amount) && amount > 0;
+    });
+
+    if (!hasValidAmount) {
+      newErrors.amounts = "At least one valid amount is required";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const searchPerson = async () => {
+    const cleanQuery = form.ssn.trim();
+
+    if (!cleanQuery) {
+      setErrors((prev) => ({
+        ...prev,
+        ssn: "Enter an SSN",
+      }));
+
       return;
     }
 
-    setIsLoading(true);
+    try {
+      setIsSearching(true);
+
+      const token =
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("token") ||
+        "";
+
+      const response = await fetch(
+        `${BACKEND_API_ENDPOINT}agreements/external/agreements`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {}),
+          },
+          body: JSON.stringify({
+            type: "PERSON",
+            query: cleanQuery,
+          }),
+        }
+      );
+
+      const result: SearchResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.message || "Person search failed");
+      }
+
+      const results =
+        result.data ||
+        result.results ||
+        result.persons ||
+        result.agreements ||
+        [];
+
+      const foundPerson = results[0];
+
+      if (!foundPerson) {
+        setPerson(null);
+
+        toast.error("No person found");
+
+        return;
+      }
+
+      setPerson(foundPerson);
+
+      setForm((prev) => ({
+        ...prev,
+        name: getPersonName(foundPerson) || prev.name,
+        telephone:
+          foundPerson.telephone ||
+          foundPerson.telephoneNumber ||
+          foundPerson.phone ||
+          prev.telephone,
+        email: foundPerson.email || prev.email,
+        ssn:
+          foundPerson.ssn ||
+          foundPerson.socialSecurityNumber ||
+          foundPerson.social_security_number ||
+          prev.ssn,
+      }));
+
+      setErrors((prev) => ({
+        ...prev,
+        ssn: "",
+      }));
+
+      toast.success("Person found successfully");
+    } catch (error) {
+      console.error("Person search failed:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to search for person"
+      );
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please check the required fields");
+
+      return;
+    }
 
     try {
-      const firstDescription = form.amounts[0]?.description || "Payment";
+      setIsLoading(true);
+
+      const amountItems = form.amounts
+        .filter((item) => {
+          const amount = Number.parseFloat(
+            String(item.amount).replace(",", ".")
+          );
+
+          return Number.isFinite(amount) && amount > 0;
+        })
+        .map((item) => ({
+          amount: Number.parseFloat(
+            String(item.amount).replace(",", ".")
+          ),
+          description: item.description || "",
+        }));
 
       const payload = {
-        customer_reference: firstDescription,
-        customer_name:
-          searchResults.person?.data?.[0]?.name?.givenName ||
-          form.name ||
-          "Unknown Customer",
+        customer_reference:
+          form.reference ||
+          form.amounts[0]?.description ||
+          "Payment",
+
+        customer_name: form.name,
+
         payment_category: form.category,
+
         description: form.description,
+
         email: form.email,
+
         social_security_number: form.ssn,
+
         telephone_number: form.telephone,
-        amount_items: form.amounts
-          .filter((amount) => amount.amount && parseFloat(amount.amount) > 0)
-          .map((amount) => ({
-            amount: parseFloat(amount.amount),
-            description: amount.description || "Payment item",
-          })),
+
+        amount_items: amountItems,
+
         total_amount: total,
       };
 
-      const response = await makePostRequest("payments/createPayment", payload);
+      await makePostRequest("payments/createPayment", payload);
 
-      if (response.data && response.data.success) {
-        toast.success("Payment registered successfully!");
-        navigate(-1);
-      } else {
-        toast.error(response.data?.message || "Failed to register payment");
-      }
-    } catch (error: any) {
-      console.error("Error registering payment:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to register payment";
-      toast.error(errorMessage);
+      toast.success("Payment registered successfully!");
+
+      sessionStorage.removeItem("paymentFormData");
+
+      navigate(-1);
+    } catch (error) {
+      console.error("Payment creation failed:", error);
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to register payment"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    const fetchCompany = async () => {
-      try {
-        const response = await makeGetRequest(
-          "companyDetail/getCompanyDetailByUser"
-        );
-        setCompany(response.data.data); // assume backend se company object aa raha hai
-      } catch (error) {
-        console.error("Error fetching company:", error);
-      } finally {
-        setCompanyLoading(false);
-      }
-    };
+  const handlePrint = () => {
+    setShowPrintView(true);
+  };
 
-    fetchCompany();
-  }, []);
-
-  return (
-    <>
-      {showPrintView ? (
-        <div className="printable-area font-plus-jakarta" ref={receiptRef}>
-          <div className="p-6 max-w-full mx-auto bg-white">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-[#332f2f]">
-                Swish kvitto
+  if (showPrintView) {
+    return (
+      <div className="print-receipt min-h-screen bg-white p-8 text-black">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-8 flex items-start justify-between border-b border-gray-300 pb-6">
+            <div>
+              <h1 className="text-2xl font-bold">
+                {company?.company_name || "Company"}
               </h1>
-              <div className="text-blue-500 font-bold text-xl">
-                {company?.attachments ? (
-                  <img
-                    src={company.attachments}
-                    alt="Company Attachment"
-                    className="w-32 h-32 object-cover rounded-md"
-                  />
-                ) : (
-                  <div className="text-gray-500 text-sm">N/A</div>
-                )}
-              </div>
+
+              {company?.registrationNumber && (
+                <p className="mt-1 text-sm text-gray-600">
+                  Registration No: {company.registrationNumber}
+                </p>
+              )}
+
+              {company?.mailingAddress && (
+                <p className="mt-1 text-sm text-gray-600">
+                  {company.mailingAddress}
+                </p>
+              )}
+
+              {(company?.postalCode || company?.city) && (
+                <p className="text-sm text-gray-600">
+                  {company?.postalCode} {company?.city}
+                </p>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col">
-                <h2 className="font-semibold text-lg text-[#332f2f] mb-2">
-                  Betalare
-                </h2>
-                <div className="mb-4 border border-gray-300 rounded-md min-h-24 p-2 py-1">
-                  <div className="grid grid-cols-2 gap-0.5 mb-2">
-                    <p className="w-20 text-xs">Company: </p>
-                    <p className="text-xs">{company.company_name || "N/A"}</p>
+            <div className="text-right">
+              <h2 className="text-xl font-bold">
+                Swish Receipt
+              </h2>
 
-                    <p className="w-20 text-xs">ORG NO: </p>
-                    <p className="text-xs">
-                      {company.registrationNumber || "asdf/A"}
-                    </p>
+              <p className="mt-1 text-sm text-gray-600">
+                Payment Receipt
+              </p>
 
-                    <p className="w-20 text-xs">Telephone:</p>
-                    <p className="text-xs">{company.phoneNumber || "adsf/A"}</p>
+              <p className="mt-2 text-sm">
+                {new Date().toLocaleDateString()}
+              </p>
+            </div>
+          </div>
 
-                    <p className="w-20 text-xs">Email: </p>
-                    <p className="text-xs">{user?.email || "fads/A"}</p>
+          <div className="grid grid-cols-2 gap-8 border-b border-gray-300 pb-6">
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase text-gray-500">
+                Payer
+              </p>
 
-                    <p className="w-20 text-xs">Address: </p>
-                    <p className="text-xs">
-                      {company.mailingAddress || "hello worl/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <p className="font-semibold">{form.name || "-"}</p>
 
-              <div className="flex flex-col">
-                <h2 className="font-semibold text-lg text-[#332f2f] mb-2">
-                  Mottagare
-                </h2>
-                <div className="mb-4 border border-gray-300 rounded-md min-h-24 p-2 py-1">
-                  <div className="grid grid-cols-2 gap-0.5 mb-2">
-                    <p className="w-20 text-xs">Name: </p>
-                    <p className="text-xs">
-                      {searchResults.person?.data?.[0]?.name?.givenName ||
-                        form.name ||
-                        "N/A"}
-                    </p>
+              <p className="text-sm">
+                SSN: {form.ssn || "-"}
+              </p>
 
-                    <p className="w-20 text-xs">SSN: </p>
-                    <p className="text-xs">{form.ssn || "N/A"}</p>
+              <p className="text-sm">
+                Phone: {form.telephone || "-"}
+              </p>
 
-                    <p className="w-20 text-xs">Telephone:</p>
-                    <p className="text-xs">{form.telephone || "N/A"}</p>
-
-                    <p className="w-20 text-xs">Email: </p>
-                    <p className="text-xs">{form.email || "N/A"}</p>
-
-                    <p className="w-20 text-xs">Address: </p>
-                    <p className="text-xs">
-                      {searchResults.person?.data?.[0]?.addresses?.[0]
-                        ?.street &&
-                      searchResults.person?.data?.[0]?.addresses?.[0]?.number
-                        ? `${searchResults.person?.data?.[0]?.addresses?.[0]?.street} ${searchResults.person?.data?.[0]?.addresses?.[0]?.number}`
-                        : "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <p className="text-sm">
+                Email: {form.email || "-"}
+              </p>
             </div>
 
             <div>
-              <div className="text-white py-2 rounded text-sm flex justify-between">
-                <span className="font-semibold text-xl text-[#332f2f]">
-                  Referens
-                </span>
-                <span className="font-semibold text-xl text-[#332f2f]">
-                  Belopp
-                </span>
-              </div>
-              <div className="mb-2 border border-gray-300 rounded-md max-h-[40vh] min-h-[40vh] flex flex-col justify-between p-2 py-1">
-                <div>
-                  {form.amounts.map((a, idx) => (
-                    <div key={idx} className="flex justify-between mt-1">
-                      <span>{a.description || "-"}</span>
-                      <span>{a.amount ? `${a.amount} kr` : "0 kr"}</span>
-                    </div>
-                  ))}
-                </div>
+              <p className="mb-2 text-xs font-bold uppercase text-gray-500">
+                Recipient
+              </p>
 
-                <div className="text-end border-t border-gray-300 py-3">
-                  <p className="text-xl font-bold">
-                    Summa att betala: {total.toFixed(2)} kr
-                  </p>
-                </div>
-              </div>
-            </div>
+              <p className="font-semibold">
+                {company?.company_name || "-"}
+              </p>
 
-            <div className="min-h-28 border border-gray-300 rounded-md px-2 py-3">
-              <h3 className="text-sm font-semibold">Company information</h3>
+              <p className="text-sm">
+                {company?.mailingAddress || "-"}
+              </p>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col">
-                  <div className="grid grid-cols-2 gap-0.5 mb-2">
-                    <p className="w-20 text-xs">Address: </p>
-                    <p className="text-xs">{company.mailingAddress || "N/A"}</p>
-
-                    <p className="w-20 text-xs">Postal Code:</p>
-                    <p className="text-xs">{company.postalCode || "N/A"}</p>
-
-                    <p className="w-20 text-xs">City: </p>
-                    <p className="text-xs">{company?.city || "N/A"}</p>
-                  </div>
-                </div>
-                <div className="flex flex-col">
-                  <div className="grid grid-cols-2 gap-0.5 mb-2">
-                    <p className="w-20 text-xs">Bank: </p>
-                    <p className="text-xs">
-                      {company.bankAccountNumber || "N/A"}
-                    </p>
-                    <p className="w-20 text-xs">IBAN: </p>
-                    <p className="text-xs">{company.iban_Bic || "N/A"}</p>
-                    <p className="w-20 text-xs">BIC/SWIFT: </p>
-                    <p className="text-xs">{company.iban_Bic || "N/A"}</p>
-                    <p className="w-20 text-xs">Swish: </p>
-                    <p className="text-xs">{company.swish_Number || "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-              {/* <h3 className="text-sm font-semibold">Företagets e-post</h3> */}
+              <p className="text-sm">
+                {company?.postalCode} {company?.city}
+              </p>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col lg:gap-8 gap-4 w-full items-start justify-center bg-[#F6F8FB] lg:p-6 p-4 font-plus-jakarta">
-          <div>
-            {isLoading ? (
-              <button
-                className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer"
-                onClick={() => navigate(-1)}
-                disabled={isLoading}
-              >
-                <AddPaymentsBackArrowIcon className="w-6 h-6" />
-                <span className="ml-2">Lägg till betalning</span>
-              </button>
-            ) : (
-              <button
-                className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer"
-                onClick={() => navigate(-1)}
-              >
-                <AddPaymentsBackArrowIcon className="w-6 h-6" />
-                <span className="ml-2">Lägg till betalning</span>
-              </button>
-            )}
-          </div>
-          <div className="grid lg:grid-cols-2 grid-cols-1 lg:gap-8 gap-4 w-full">
-            <div className="bg-white rounded-2xl shadow-sm border border-[#E6EAF0] lg:p-8 p-4 flex-1 w-full no-print">
-              <div className="bg-[#F4F8FF] border border-[#C7E0FF] text-[#012F7A] rounded-lg px-4 py-3 mb-7 flex items-center gap-2 text-sm">
-                <InfoCircleIcon />
-                Om du har en gräns per transaktion kan du göra flera
-                transaktioner samtidigt istället för att skapa en ny betalning
-                för varje en."
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* <div>
-                  <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                    Customer Name
-                  </label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    className={`w-full border rounded-lg px-3 py-2 text-[13px] bg-[#F9FAFB] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 ${
-                      errors.name ? "border-red-500" : "border-[#E6EAF0]"
-                    }`}
-                    placeholder="Ange kundnamn..."
-                    disabled={isLoading}
-                  />
-                  {errors.name && (
-                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                  )}
-                </div> */}
 
-                {/* SSN Field - Update this section */}
-                {/* <div className="relative">
-                    <input
-                      name="ssn"
-                      value={form.ssn}
-                      onChange={handleChange}
-                      className={`w-full border rounded-lg px-3 py-2 text-[13px] bg-[#F9FAFB] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 ${
-                        errors.ssn ? "border-red-500" : "border-[#E6EAF0]"
-                      }`}
-                      placeholder="Enter SSN..."
-                      disabled={isLoading}
-                    />
-                    <div className="absolute inset-y-0 left-[85%] z-50 pl-3 flex items-center cursor-pointer">
-                      <Search className="h-4 w-4 text-blue-600" />
-                    </div>
-                  </div> */}
-                {/* <div className="flex items-center gap-2">
-                    <input
-                      name="ssn"
-                      placeholder="Enter SSN..."
-                      value={form.ssn}
-                      onChange={handleChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      className="rounded-lg bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white px-4 py-2 cursor-pointer"
-                      type="button"
-                      // onClick={handleOrgOrPersonSearch}
-                    >
-                      Search
-                    </button>
-                  </div>
-                  {errors.ssn && (
-                    <p className="text-red-500 text-xs mt-1">{errors.ssn}</p>
-                  )}
-                            
-                </div> */}
-
-                {/* SSN Field - Update this section */}
-                <div>
-                  <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                    Personnummer (SSN) *
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      name="ssn"
-                      placeholder="Enter SSN..."
-                      value={form.ssn}
-                      onChange={handleChange}
-                      className={`w-full p-2 border ${
-                        errors.ssn ? "border-red-500" : "border-[#E6EAF0]"
-                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                    />
-                    <button
-                      className="rounded-lg bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white px-4 py-2 cursor-pointer flex items-center justify-center min-w-[100px]"
-                      type="button"
-                      onClick={() => handleSearch("PERSON", form.ssn)}
-                      disabled={isSearching}
-                    >
-                      {isSearching ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Sök"
-                      )}
-                    </button>
-                  </div>
-                  {errors.ssn && (
-                    <p className="text-red-500 text-xs mt-1">{errors.ssn}</p>
-                  )}
-                </div>
-                {/* Telephone Field - Update this section */}
-                <div>
-                  <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                    Telefonnummer *
-                  </label>
-                  <input
-                    name="telephone"
-                    value={form.telephone}
-                    onChange={handleChange}
-                    className={`w-full border rounded-lg px-3 py-2 text-[13px] bg-[#F9FAFB] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 ${
-                      errors.telephone ? "border-red-500" : "border-[#E6EAF0]"
-                    }`}
-                    placeholder="Ange telefonnummer..."
-                    disabled={isLoading}
-                  />
-                  {errors.telephone && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.telephone}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                    Email
-                  </label>
-                  <input
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    className={`w-full border rounded-lg px-3 py-2 text-[13px] bg-[#F9FAFB] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 ${
-                      errors.email ? "border-red-500" : "border-[#E6EAF0]"
-                    }`}
-                    placeholder="Ange e-postadress..."
-                    disabled={isLoading}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                    Betalningskategori
-                  </label>
-                  <select
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    className={`w-full border rounded-lg px-3 py-2 text-[13px] bg-[#F9FAFB] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 ${
-                      errors.category ? "border-red-500" : "border-[#E6EAF0]"
-                    }`}
-                    disabled={isLoading}
-                  >
-                    <option value="">Välj betalningskategori...</option>
-                    <option value="CarPurchase">Bilköp</option>
-                    <option value="TirePurchase">Tire Purchase</option>
-                    <option value="Service&Workshop">Service & Workshop</option>
-                    <option value="Fuel">Fuel</option>
-                    <option value="Expenses">Expenses</option>
-                    <option value="other">Other</option>
-                  </select>
-                  {errors.category && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.category}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  className="w-full border border-[#E6EAF0] rounded-lg px-3 py-2 text-[13px] bg-[#F9FAFB] min-h-[60px] focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                  placeholder="Enter any specific details or comments here..."
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="bg-white rounded-xl shadow-sm border border-[#E6EAF0] p-6 pt-0 mb-6 min-h-[230px] max-h-[230px] overflow-y-auto">
-                <div className="font-semibold text-[#23272E] mb-4 text-[15px] sticky top-0 z-50 bg-white pt-5">
-                  Amount *
-                </div>
-                {errors.amounts && (
-                  <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-500" />
-                    <p className="text-red-600 text-xs">{errors.amounts}</p>
-                  </div>
-                )}
-                <div className="flex flex-col gap-4">
-                  {form.amounts.map((a, idx) => (
-                    <div
-                      key={idx}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center border border-[#E6EAF0] rounded-lg p-4 relative bg-[#F9FAFB]"
-                    >
-                      <div>
-                        <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                          Amount (kr)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          name="amount"
-                          value={a.amount}
-                          onChange={(e) =>
-                            handleAmountChange(idx, "amount", e.target.value)
-                          }
-                          className="w-full border border-[#E6EAF0] rounded-lg px-3 py-2 text-[13px] bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                          placeholder="Enter amount..."
-                          disabled={isLoading}
-                        />
-                      </div>
-                      <div className="flex items-end gap-2">
-                        <div className="w-full">
-                          <label className="block text-[13px] text-[#23272E] mb-1 font-medium">
-                            Reference
-                          </label>
-                          <input
-                            name="description"
-                            value={a.description}
-                            onChange={(e) =>
-                              handleAmountChange(
-                                idx,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                            className="w-full border border-[#E6EAF0] rounded-lg px-3 py-2 text-[13px] bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
-                            placeholder="Enter description..."
-                            disabled={isLoading}
-                          />
-                        </div>
-                        {form.amounts.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeAmountRow(idx)}
-                            className="text-red-500 hover:text-red-700 p-2 flex items-center justify-center cursor-pointer"
-                            tabIndex={-1}
-                            disabled={isLoading}
-                          >
-                            <RemoveLineAltIcon />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addAmountRow}
-                  className="flex items-center justify-center gap-1 text-[#012F7A] font-semibold mt-6 hover:underline w-full cursor-pointer"
-                  disabled={isLoading}
-                >
-                  <span className="text-lg leading-none mb-1">+</span> Lägg till
-                  ytterligare belopp
-                </button>
-              </div>
-              <div className="flex gap-3 mt-8">
-                <button
-                  className="flex-1 border border-[#012F7A] text-[#012F7A] rounded-lg py-2 font-semibold hover:bg-[#F4F8FF] transition cursor-pointer"
-                  onClick={() => navigate(-1)}
-                  disabled={isLoading}
-                >
-                  Avbryt
-                </button>
-                <button
-                  className="flex-1 bg-[#012F7A] text-white rounded-lg py-2 font-semibold hover:bg-[#012F7A]/90 transition flex items-center justify-center gap-2 cursor-pointer"
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="animate-spin h-4 w-4" />
-                      Registering...
-                    </>
-                  ) : (
-                    "Register Payment"
-                  )}
-                </button>
-              </div>
+          <div className="py-6">
+            <div className="mb-4 grid grid-cols-2 border-b border-gray-200 pb-2 text-xs font-bold uppercase text-gray-500">
+              <span>Reference</span>
+              <span className="text-right">Amount</span>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm border border-[#E6EAF0] lg:p-8 p-4 flex-1 w-full flex flex-col printable-area">
-              <div className="flex items-center justify-between mb-6 no-print">
-                <div className="text-lg font-semibold text-gray-900 flex lg:flex-row flex-col lg:items-center lg:gap-2 gap-1">
-                  Betalningskvitto{" "}
-                  <span className="text-gray-400 text-sm font-normal">
-                    (Förhandsgranskning i realtid)
+
+            {form.amounts.map((item, index) => {
+              const amount = Number.parseFloat(
+                String(item.amount).replace(",", ".")
+              );
+
+              return (
+                <div
+                  key={index}
+                  className="mb-3 grid grid-cols-2 text-sm"
+                >
+                  <span>
+                    {item.description || form.reference || "Payment"}
+                  </span>
+
+                  <span className="text-right">
+                    {Number.isFinite(amount)
+                      ? `${formatAmount(amount)}`
+                      : "0.00"}
                   </span>
                 </div>
-                <button
-                  onClick={handlePrint}
-                  className="text-[#012F7A] hover:text-blue-700 cursor-pointer no-print"
-                >
-                  <PaymentReceiptIcon />
-                </button>
-              </div>
-              <div className="no-print">
-                <div className="grid grid-cols-2 gap-4 mb-4 text-[13px]">
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Kategori</div>
-                    <div className="text-gray-900 font-medium">
-                      {form.category || "N/A"}
+              );
+            })}
+          </div>
+
+          <div className="border-t-2 border-black pt-5">
+            <div className="flex items-center justify-between text-xl font-bold">
+              <span>Total Amount</span>
+              <span>{formatAmount(total)}</span>
+            </div>
+          </div>
+
+          {form.description && (
+            <div className="mt-8 border-t border-gray-300 pt-5">
+              <p className="mb-2 text-xs font-bold uppercase text-gray-500">
+                Description
+              </p>
+
+              <p className="text-sm">{form.description}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f6f8fb] text-slate-900 transition-colors dark:bg-[#070b14] dark:text-white">
+      {/* TOP BAR */}
+      <div className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl dark:border-slate-800 dark:bg-[#080d17]/90">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="group inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500/40 dark:hover:bg-blue-500/10 dark:hover:text-blue-400"
+          >
+            <ArrowLeft
+              size={17}
+              className="transition-transform group-hover:-translate-x-0.5"
+            />
+            Back
+          </button>
+
+          <div className="hidden items-center gap-3 sm:flex">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+              <ReceiptText size={18} />
+            </div>
+
+            <div>
+              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                Payment Management
+              </p>
+
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Create and manage payments
+              </p>
+            </div>
+          </div>
+
+          <div className="h-9 w-9" />
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        {/* HEADER */}
+        <div className="mb-7 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400">
+              <WalletCards size={14} />
+              New Payment
+            </div>
+
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+              Create a new payment
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Enter the customer details, payment category and amount
+              information below.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-[#0d1422]">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Current total
+            </p>
+
+            <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
+              {formatAmount(total)}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(350px,0.8fr)]">
+            {/* LEFT */}
+            <div className="space-y-6">
+              {/* CUSTOMER */}
+              <section className={cardClass}>
+                <div className="border-b border-slate-100 px-5 py-5 dark:border-slate-800 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                      <UserRound size={19} />
+                    </div>
+
+                    <div>
+                      <h2 className="font-bold text-slate-900 dark:text-white">
+                        Customer Information
+                      </h2>
+
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        Search or enter customer details
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs text-gray-500 mb-1">Datum</div>
-                    <div className="text-gray-900 font-medium">
-                      {new Date().toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
+                </div>
+
+                <div className="p-5 sm:p-6">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    {/* SSN */}
+                    <div className="md:col-span-2">
+                      <label className={labelClass}>
+                        SSN <span className="text-red-500">*</span>
+                      </label>
+
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Search
+                            size={17}
+                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
+
+                          <input
+                            name="ssn"
+                            value={form.ssn}
+                            onChange={handleChange}
+                            placeholder="Enter an SSN"
+                            className={`${inputClass} pl-10 ${
+                              errors.ssn
+                                ? "border-red-400 focus:border-red-500 focus:ring-red-500/10"
+                                : ""
+                            }`}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={searchPerson}
+                          disabled={isSearching}
+                          className="inline-flex min-w-[100px] items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Search size={16} />
+
+                          {isSearching ? "Searching..." : "Search"}
+                        </button>
+                      </div>
+
+                      {errors.ssn && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">
+                          {errors.ssn}
+                        </p>
+                      )}
+
+                      {person && (
+                        <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
+                          <CheckCircle2 size={15} />
+                          Customer information found and populated.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* NAME */}
+                    <div>
+                      <label className={labelClass}>
+                        Customer Name
+                      </label>
+
+                      <div className="relative">
+                        <UserRound
+                          size={16}
+                          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+
+                        <input
+                          name="name"
+                          value={form.name}
+                          onChange={handleChange}
+                          placeholder="Enter customer name"
+                          className={`${inputClass} pl-10`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* PHONE */}
+                    <div>
+                      <label className={labelClass}>
+                        Phone <span className="text-red-500">*</span>
+                      </label>
+
+                      <div className="relative">
+                        <Phone
+                          size={16}
+                          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+
+                        <input
+                          name="telephone"
+                          value={form.telephone}
+                          onChange={handleChange}
+                          placeholder="Enter phone number..."
+                          className={`${inputClass} pl-10 ${
+                            errors.telephone
+                              ? "border-red-400 focus:border-red-500"
+                              : ""
+                          }`}
+                        />
+                      </div>
+
+                      {errors.telephone && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">
+                          {errors.telephone}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* EMAIL */}
+                    <div>
+                      <label className={labelClass}>
+                        Email
+                      </label>
+
+                      <div className="relative">
+                        <Mail
+                          size={16}
+                          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+
+                        <input
+                          name="email"
+                          type="email"
+                          value={form.email}
+                          onChange={handleChange}
+                          placeholder="Enter email address..."
+                          className={`${inputClass} pl-10`}
+                        />
+                      </div>
+                    </div>
+
+                    {/* REFERENCE */}
+                    <div>
+                      <label className={labelClass}>
+                        Reference
+                      </label>
+
+                      <div className="relative">
+                        <FileText
+                          size={16}
+                          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                        />
+
+                        <input
+                          name="reference"
+                          value={form.reference}
+                          onChange={handleChange}
+                          placeholder="Payment reference"
+                          className={`${inputClass} pl-10`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* PAYMENT */}
+              <section className={cardClass}>
+                <div className="border-b border-slate-100 px-5 py-5 dark:border-slate-800 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+                      <CreditCard size={19} />
+                    </div>
+
+                    <div>
+                      <h2 className="font-bold text-slate-900 dark:text-white">
+                        Payment Details
+                      </h2>
+
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        Define the payment category and amounts
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 sm:p-6">
+                  <div className="grid grid-cols-1 gap-5">
+                    {/* CATEGORY */}
+                    <div>
+                      <label className={labelClass}>
+                        Payment Category{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+
+                      <select
+                        name="category"
+                        value={form.category}
+                        onChange={handleChange}
+                        className={`${inputClass} ${
+                          errors.category
+                            ? "border-red-400 focus:border-red-500"
+                            : ""
+                        }`}
+                      >
+                        <option value="">
+                          Select payment category...
+                        </option>
+
+                        <option value="CarPurchase">
+                          Car Purchase
+                        </option>
+
+                        <option value="TirePurchase">
+                          Tire Purchase
+                        </option>
+
+                        <option value="Service&Workshop">
+                          Service & Workshop
+                        </option>
+
+                        <option value="Fuel">Fuel</option>
+
+                        <option value="Expenses">Expenses</option>
+
+                        <option value="other">Other</option>
+                      </select>
+
+                      {errors.category && (
+                        <p className="mt-1.5 text-xs font-medium text-red-500">
+                          {errors.category}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* AMOUNTS */}
+                    <div>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div>
+                          <label className={`${labelClass} mb-0`}>
+                            Amounts{" "}
+                            <span className="text-red-500">*</span>
+                          </label>
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            Add one or more payment lines.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={addAmountRow}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/15"
+                        >
+                          <Plus size={14} />
+                          Add amount
+                        </button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {form.amounts.map((item, index) => (
+                          <div
+                            key={index}
+                            className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-900/50"
+                          >
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_180px_auto]">
+                              <div>
+                                <label className="mb-1.5 block text-[11px] font-semibold text-slate-400">
+                                  Description
+                                </label>
+
+                                <input
+                                  value={item.description}
+                                  onChange={(e) =>
+                                    handleAmountChange(
+                                      index,
+                                      "description",
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Payment description"
+                                  className={inputClass}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="mb-1.5 block text-[11px] font-semibold text-slate-400">
+                                  Amount
+                                </label>
+
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={item.amount}
+                                    onChange={(e) =>
+                                      handleAmountChange(
+                                        index,
+                                        "amount",
+                                        e.target.value
+                                      )
+                                    }
+                                    placeholder="0.00"
+                                    className={`${inputClass} pr-14`}
+                                  />
+
+                                  <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400">
+                                    SEK
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-end">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeAmountRow(index)
+                                  }
+                                  disabled={form.amounts.length === 1}
+                                  className="flex h-[46px] w-full items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-red-500/30 dark:hover:bg-red-500/10 dark:hover:text-red-400 sm:w-[46px]"
+                                >
+                                  <Trash2 size={17} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {errors.amounts && (
+                        <p className="mt-2 text-xs font-medium text-red-500">
+                          {errors.amounts}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* DESCRIPTION */}
+                    <div>
+                      <label className={labelClass}>
+                        Description
+                      </label>
+
+                      <textarea
+                        name="description"
+                        value={form.description}
+                        onChange={handleChange}
+                        rows={4}
+                        placeholder="Add additional payment information..."
+                        className={`${inputClass} resize-none`}
+                      />
+                    </div>
+
+                    {/* TOTAL */}
+                    <div className="rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 dark:border-blue-500/20 dark:from-blue-500/10 dark:to-indigo-500/10">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                            Total Payment
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Calculated from all payment lines
+                          </p>
+                        </div>
+
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                          {formatAmount(total)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* COMPANY */}
+              <section className={cardClass}>
+                <div className="border-b border-slate-100 px-5 py-5 dark:border-slate-800 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      <MapPin size={19} />
+                    </div>
+
+                    <div>
+                      <h2 className="font-bold text-slate-900 dark:text-white">
+                        Company Information
+                      </h2>
+
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        Registered company details
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 sm:p-6">
+                  {companyLoading ? (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {[1, 2, 3, 4].map((item) => (
+                        <div
+                          key={item}
+                          className="h-16 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/60">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                          Company
+                        </p>
+
+                        <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">
+                          {company?.company_name || "-"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/60">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                          Registration Number
+                        </p>
+
+                        <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">
+                          {company?.registrationNumber || "-"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/60">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                          Address
+                        </p>
+
+                        <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">
+                          {company?.mailingAddress || "-"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/60">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                          City
+                        </p>
+
+                        <p className="mt-1 font-semibold text-slate-800 dark:text-slate-100">
+                          {company?.postalCode || ""}{" "}
+                          {company?.city || "-"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* ACTIONS */}
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <CheckCircle2 size={17} />
+
+                  {isLoading
+                    ? "Registering..."
+                    : "Register Payment"}
+                </button>
+              </div>
+            </div>
+
+            {/* RIGHT PREVIEW */}
+            <aside className="xl:sticky xl:top-[86px] xl:self-start">
+              <div className={cardClass}>
+                <div className="border-b border-slate-100 px-5 py-5 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                        <ReceiptText size={19} />
+                      </div>
+
+                      <div>
+                        <h2 className="font-bold text-slate-900 dark:text-white">
+                          Payment Receipt
+                        </h2>
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Real-time preview
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handlePrint}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                    >
+                      Print
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-5">
+                  {/* RECEIPT HEADER */}
+                  <div className="rounded-2xl bg-slate-50 p-5 dark:bg-slate-900/70">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-lg font-bold text-slate-900 dark:text-white">
+                          {company?.company_name || "Company"}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Payment Receipt
+                        </p>
+                      </div>
+
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm dark:bg-slate-800 dark:text-blue-400">
+                        <ReceiptText size={18} />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <CalendarDays size={14} />
+
+                      {new Date().toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  {/* CATEGORY */}
+                  <div className="mt-5 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-slate-200 p-3.5 dark:border-slate-800">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Category
+                      </p>
+
+                      <p className="mt-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        {form.category
+                          ? form.category === "CarPurchase"
+                            ? "Car Purchase"
+                            : form.category === "TirePurchase"
+                            ? "Tire Purchase"
+                            : form.category ===
+                              "Service&Workshop"
+                            ? "Service & Workshop"
+                            : form.category === "Fuel"
+                            ? "Fuel"
+                            : form.category === "Expenses"
+                            ? "Expenses"
+                            : "Other"
+                          : "-"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 p-3.5 dark:border-slate-800">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Reference
+                      </p>
+
+                      <p className="mt-1.5 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        {form.reference || "-"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* CUSTOMER */}
+                  <div className="mt-5">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Payment Recipient
+                    </p>
+
+                    <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                          <UserRound size={16} />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900 dark:text-white">
+                            {form.name || "Customer Name"}
+                          </p>
+
+                          <div className="mt-2 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                            <p className="flex items-center gap-2">
+                              <Phone size={13} />
+                              {form.telephone || "-"}
+                            </p>
+
+                            <p className="flex min-w-0 items-center gap-2">
+                              <Mail size={13} />
+
+                              <span className="truncate">
+                                {form.email || "-"}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {person && (
+                        <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            Address
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                            {getPersonAddress(person) || "-"}
+                          </p>
+
+                          <p className="text-xs text-slate-600 dark:text-slate-300">
+                            {getPersonZip(person)}{" "}
+                            {getPersonCity(person)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* PAYMENT INFORMATION */}
+                  <div className="mt-5">
+                    <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Payment Information
+                    </p>
+
+                    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                      {form.amounts.map((item, index) => {
+                        const amount = Number.parseFloat(
+                          String(item.amount).replace(",", ".")
+                        );
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-3 last:border-0 dark:border-slate-800"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-slate-700 dark:text-slate-200">
+                                {item.description ||
+                                  "Payment item"}
+                              </p>
+                            </div>
+
+                            <p className="shrink-0 text-sm font-semibold text-slate-900 dark:text-white">
+                              {Number.isFinite(amount)
+                                ? formatAmount(amount)
+                                : "0.00"}
+                            </p>
+                          </div>
+                        );
                       })}
                     </div>
                   </div>
-                </div>
-                <div className="mb-10">
-                  <div className="font-semibold text-[#23272E] mb-2 text-[14px]">
-                    Betalingsmottagare
+
+                  {/* DESCRIPTION */}
+                  {form.description && (
+                    <div className="mt-5 rounded-xl bg-slate-50 p-4 dark:bg-slate-900/60">
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Description
+                      </p>
+
+                      <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                        {form.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* TOTAL */}
+                  <div className="mt-5 rounded-2xl bg-slate-900 p-5 text-white dark:bg-blue-600">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-blue-100">
+                          Total
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400 dark:text-blue-100">
+                          Amount to pay
+                        </p>
+                      </div>
+
+                      <p className="text-2xl font-bold">
+                        {formatAmount(total)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-[13px]">
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Kundnamn</div>
-                      <div className="text-gray-900 font-medium">
-                        {searchResults.person?.data?.[0]?.name?.givenName ||
-                          form.name ||
-                          "N/A"}
+
+                  {/* COMPANY INFO */}
+                  <div className="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                        <MapPin size={14} />
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">
-                        Personnummer
-                      </div>
-                      <div className="text-gray-900 font-medium">
-                        {form.ssn || "N/A"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Telefon</div>
-                      <div className="text-gray-900 font-medium">
-                        {form.telephone || "N/A"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">E-post</div>
-                      <div className="text-gray-900 font-medium">
-                        {form.email || "N/A"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Adress</div>
-                      <div className="text-gray-900 font-medium">
-                        {" "}
-                        {searchResults.person?.data?.[0]?.addresses?.[0]
-                          ?.street &&
-                        searchResults.person?.data?.[0]?.addresses?.[0]?.number
-                          ? `${searchResults.person?.data?.[0]?.addresses?.[0]?.street} ${searchResults.person?.data?.[0]?.addresses?.[0]?.number}`
-                          : "N/A"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">
-                        Postnummer
-                      </div>
-                      <div className="text-gray-900 font-medium">
-                        {" "}
-                        {searchResults.person?.data?.[0]?.addresses?.[0]?.zip
-                          ? searchResults.person?.data?.[0]?.addresses?.[0]?.zip
-                          : "N/A"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Stad</div>
-                      <div className="text-gray-900 font-medium">
-                        {" "}
-                        {searchResults.person?.data?.[0]?.addresses?.[0]?.city
-                          ? searchResults.person?.data?.[0]?.addresses?.[0]
-                              ?.city
-                          : "N/A"}
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                          {company?.company_name || "Company"}
+                        </p>
+
+                        <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                          {company?.mailingAddress || "-"}
+                          <br />
+                          {company?.postalCode || ""}{" "}
+                          {company?.city || ""}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="mb-10">
-                  <div className="font-semibold text-[#23272E] mb-2 text-[14px]">
-                    Beskrivning
-                  </div>
-                  <div className="text-[13px] text-gray-900 font-medium">
-                    {form.description || "N/A"}
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <div className="font-semibold text-[#23272E] mb-2 text-[14px]">
-                    Betalningsinformation
-                  </div>
-                  <div className="text-[13px] text-gray-900 font-medium">
-                    {form.amounts.map((a, idx) => (
-                      <div key={idx} className="flex justify-between">
-                        <span>{a.description || "-"}</span>
-                        <span>{a.amount ? `${a.amount} kr` : "0 kr"}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex justify-between font-semibold text-gray-900 text-base border-t pt-2 mt-2">
-                  <span>Totalt</span>
-                  <span>{total} kr</span>
-                </div>
-                {/* <div className="mt-8 text-xs text-gray-400 leading-5 text-center">
-                  Org.nr: 556789-1234 Helsingborgsvägen 123, 252 31 Helsingborg
-                  <br />
-                  Tel: 042-12 34 56 | info@lindstrommobil.se
-                </div> */}
               </div>
-            </div>
+            </aside>
           </div>
-        </div>
-      )}
-    </>
+        </form>
+      </main>
+
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
+          }
+
+          body * {
+            visibility: hidden;
+          }
+
+          .print-receipt,
+          .print-receipt * {
+            visibility: visible;
+          }
+
+          .print-receipt {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            min-height: 100vh;
+            background: white !important;
+          }
+
+          @page {
+            size: A4;
+            margin: 12mm;
+          }
+        }
+      `}</style>
+    </div>
   );
-};
+}
 
 export default AddPayments;

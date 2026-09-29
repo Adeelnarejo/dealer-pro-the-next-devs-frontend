@@ -1,7 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  Search,
+  CarFront,
+  Plus,
+  ArrowUpRight,
+  RefreshCw,
+  AlertCircle,
+  CalendarDays,
+  MapPin,
+  Gauge,
+  Fuel,
+  Settings2,
+  X,
+} from "lucide-react";
 import { makeGetRequest } from "../../api/Api";
-import { ArrowRightIcon } from "../utils/Icons";
 import { useNavigate } from "react-router-dom";
 
 interface Vehicle {
@@ -26,410 +38,520 @@ interface Vehicle {
   updatedAt: string;
 }
 
-const statusColors: { [key: string]: string } = {
-  Available: "bg-green-100 text-green-700",
-  Sold: "bg-red-100 text-red-700",
-  Reserved: "bg-yellow-100 text-yellow-700",
-  "Sold Out": "bg-blue-100 text-blue-700",
+const statusStyles: Record<string, string> = {
+  Available:
+    "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
+
+  Sold:
+    "bg-red-50 text-red-700 border-red-100 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20",
+
+  Reserved:
+    "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20",
+
+  "Sold Out":
+    "bg-blue-50 text-blue-700 border-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
 };
+
+interface VehiclesTableProps {
+  setShowAddModal: (show: boolean) => void;
+  showAddModal: boolean;
+}
 
 const VehiclesTable = ({
   setShowAddModal,
-  showAddModal
-}: {
-  setShowAddModal: (show: boolean) => void;
-  showAddModal: boolean;
-}) => {
-  // const [expandedId, setExpandedId] = useState<string | null>(null);
+  showAddModal,
+}: VehiclesTableProps) => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
+  const navigate = useNavigate();
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
+
     try {
-      return new Date(dateString).toLocaleDateString();
+      const date = new Date(dateString);
+
+      if (Number.isNaN(date.getTime())) {
+        return dateString;
+      }
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
     } catch {
       return dateString;
     }
   };
 
-  // const handleExpand = (id: string) => {
-  //   setExpandedId(expandedId === id ? null : id);
-  // };
+  const formatNumber = (value: number | undefined) => {
+    if (value === undefined || value === null) return "N/A";
+
+    return Number(value).toLocaleString("en-US");
+  };
+
   const fetchVehicles = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await makeGetRequest("searchVehicle/SearchgetAllVehicles");
-        if (response.data && response.data.success) {
-          setVehicles(response.data.data.reverse());
-        } else {
-          setError(response.data?.message || "Failed to fetch vehicles.");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching vehicles.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await makeGetRequest(
+        "searchVehicle/SearchgetAllVehicles"
+      );
+
+      if (response.data && response.data.success) {
+        const vehicleData = Array.isArray(response.data.data)
+          ? [...response.data.data]
+          : [];
+
+        setVehicles(vehicleData.reverse());
+      } else {
+        setError(response.data?.message || "Failed to fetch vehicles.");
       }
-    };
+    } catch (err) {
+      console.error(err);
+      setError("An error occurred while fetching vehicles.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    
     fetchVehicles();
   }, [showAddModal]);
 
   const filteredVehicles = vehicles.filter((vehicle) => {
-    const searchLower = search.toLowerCase();
+    const searchLower = search.trim().toLowerCase();
+
+    if (!searchLower) return true;
+
     return (
-      vehicle.registrationNumber.toLowerCase().includes(searchLower) ||
-      vehicle.vehicleName.toLowerCase().includes(searchLower) ||
-      vehicle.model.toLowerCase().includes(searchLower)
+      vehicle.registrationNumber?.toLowerCase().includes(searchLower) ||
+      vehicle.vehicleName?.toLowerCase().includes(searchLower) ||
+      vehicle.model?.toLowerCase().includes(searchLower) ||
+      vehicle.brand?.toLowerCase().includes(searchLower) ||
+      vehicle.status?.toLowerCase().includes(searchLower)
     );
   });
 
-  const navigate = useNavigate();
-
   const handleSearchNewVehicle = () => {
     setShowAddModal(true);
-    // navigate("/add-new-vehicle");
+  };
+
+  const handleViewDetails = (registrationNumber: string) => {
+    navigate(`/vehicle-details2/${registrationNumber}`);
   };
 
   return (
-    <div className="font-plus-jakarta bg-white p-6 rounded-lg shadow-md">
-      <div className="flex lg:flex-row flex-col justify-between lg:items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Fordonssökning</h2>
-        <div className="flex sm:flex-row flex-col gap-3 sm:items-center lg:mt-0 mt-4">
-          <div className="relative w-fit">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+    <div className="w-full bg-white font-plus-jakarta transition-colors duration-300 dark:bg-[#0B1728]">
+
+      {/* =========================================================
+          TABLE HEADER
+      ========================================================= */}
+      <div className="border-b border-slate-100 px-4 py-5 dark:border-slate-800 sm:px-6 lg:px-7">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+
+          {/* Title */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              <CarFront size={19} />
             </div>
-            <input
-              type="text"
-              placeholder="Söka"
-              className="w-64 pl-10 pr-12 py-2.5 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+
+            <div>
+              <h2 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                Vehicle Inventory
+              </h2>
+
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
+                Browse and manage your dealership vehicles
+              </p>
+            </div>
           </div>
-          <button
-            className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white px-4 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors w-fit"
-            onClick={handleSearchNewVehicle}
-          >
-            <span className="text-lg leading-none mb-1">+</span>
-            Sök fordon
-          </button>
+
+          {/* Search + Button */}
+          <div className="flex w-full flex-col gap-2.5 sm:flex-row xl:w-auto">
+
+            {/* Search */}
+            <div className="relative w-full sm:min-w-[280px] sm:max-w-[360px]">
+              <Search
+                size={16}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+
+              <input
+                type="text"
+                placeholder="Search vehicles..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-sm font-medium text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#101F33] dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-[#101F33]"
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-md p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700 dark:hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Search Vehicle */}
+            <button
+              type="button"
+              onClick={handleSearchNewVehicle}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#002147] px-4 text-sm font-bold text-white shadow-lg shadow-[#002147]/15 transition-all hover:-translate-y-0.5 hover:bg-[#00305f] dark:bg-blue-600 dark:shadow-blue-600/15 dark:hover:bg-blue-700 sm:w-auto"
+            >
+              <Plus size={16} strokeWidth={2.5} />
+              Search Vehicle
+            </button>
+          </div>
+        </div>
+
+        {/* Result count */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:bg-[#101F33] dark:text-slate-300">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            {filteredVehicles.length}{" "}
+            {filteredVehicles.length === 1 ? "vehicle" : "vehicles"}
+          </span>
+
+          {search && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400">
+              <Search size={10} />
+              Searching for "{search}"
+            </span>
+          )}
         </div>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-gray-200 md:max-h-[600px] max-h-[500px] overflow-y-auto">
-        <table className="min-w-full">
-          <thead className="bg-[#F0F7FF] sticky top-0 z-10">
-            <tr>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Reg nummer
-              </th>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Fordonets namn
-              </th>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Modell
-              </th>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Status
-              </th>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Ursprungsmarknad
-              </th>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Datum
-              </th>
-              <th className="py-3 px-4 text-left text-sm font-medium text-gray-700">
-                Handling
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
-              <tr>
-                <td colSpan={6} className="py-6 text-center">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                  </div>
-                </td>
+
+      {/* =========================================================
+          TABLE AREA
+      ========================================================= */}
+      <div className="px-3 pb-4 pt-3 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6">
+
+        <div className="scrollbar-hide max-h-[520px] overflow-auto rounded-xl border border-slate-200 dark:border-slate-800 md:max-h-[600px]">
+
+          <table className="min-w-[1050px] w-full border-collapse">
+
+            {/* =====================================================
+                TABLE HEAD
+            ===================================================== */}
+            <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-[#101F33]">
+              <tr className="border-b border-slate-200 dark:border-slate-700">
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Registration
+                </th>
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Vehicle
+                </th>
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Model
+                </th>
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Status
+                </th>
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Origin
+                </th>
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Updated
+                </th>
+
+                <th className="whitespace-nowrap px-4 py-3.5 text-right text-[10px] font-extrabold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                  Action
+                </th>
               </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={6} className="py-6 text-center text-red-500">
-                  {error}
-                </td>
-              </tr>
-            ) : filteredVehicles.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-6 text-center text-gray-500">
-                 Inga fordon hittades
-                </td>
-              </tr>
-            ) : (
-              filteredVehicles.map((vehicle) => (
-                <React.Fragment key={vehicle.id}>
-                  <tr
-                    className={`hover:bg-gray-50`}
-                    // className={`hover:bg-gray-50 ${
-                    //   expandedId === vehicle.id ? "bg-[#E9EEF640]" : ""
-                    // }`}
-                  >
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-3">
-                        {/* <button
-                          onClick={() => handleExpand(vehicle.id)}
-                          className="flex items-center justify-center w-6 h-6 hover:bg-gray-200 rounded transition-colors cursor-pointer"
-                        >
-                          <ArrowCollapseIcon
-                            className={`text-gray-400 text-xs transition-transform ${
-                              expandedId === vehicle.id
-                                ? "rotate-90"
-                                : "rotate-270"
-                            }`}
-                          />
-                        </button> */}
-                        <span className="inline-flex items-center gap-2 border border-[rgb(232,234,238)] rounded pr-1">
-                          <span className="bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white rounded-tl rounded-bl px-2 py-2 text-xs font-bold">
-                            S
-                          </span>
-                          <span className="font-medium text-gray-900">
-                            {vehicle.registrationNumber || "N/A"}
-                          </span>
-                        </span>
+            </thead>
+
+            {/* =====================================================
+                TABLE BODY
+            ===================================================== */}
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+
+              {/* Loading */}
+              {isLoading ? (
+                <>
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td className="px-4 py-4">
+                        <div className="h-8 w-28 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="space-y-2">
+                          <div className="h-4 w-32 rounded bg-slate-100 dark:bg-slate-800" />
+                          <div className="h-3 w-20 rounded bg-slate-100 dark:bg-slate-800" />
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="h-4 w-24 rounded bg-slate-100 dark:bg-slate-800" />
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-20 rounded-full bg-slate-100 dark:bg-slate-800" />
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="h-4 w-24 rounded bg-slate-100 dark:bg-slate-800" />
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="h-4 w-24 rounded bg-slate-100 dark:bg-slate-800" />
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="ml-auto h-8 w-24 rounded-lg bg-slate-100 dark:bg-slate-800" />
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              ) : error ? (
+
+                /* Error */
+                <tr>
+                  <td colSpan={7} className="px-4 py-16">
+                    <div className="mx-auto flex max-w-md flex-col items-center text-center">
+
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-500 dark:bg-red-500/10 dark:text-red-400">
+                        <AlertCircle size={22} />
                       </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      {vehicle.vehicleName || "N/A"}
-                    </td>
-                    <td className="py-4 px-4">{vehicle.model || "N/A"}</td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                          statusColors[vehicle.status] ||
-                          "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {vehicle.status || "N/A"}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      {vehicle.importOrigin || "N/A"}
-                    </td>
-                    <td className="py-4 px-4">
-                      {formatDate(vehicle.updatedAt) || "N/A"}
-                    </td>
-                    <td className="py-4 px-4">
+
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        Unable to load vehicles
+                      </h3>
+
+                      <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500 dark:text-slate-400">
+                        {error}
+                      </p>
+
                       <button
-                        className="border border-blue-600 text-blue-600 px-4 py-1 cursor-pointer rounded font-medium flex items-center gap-2 hover:bg-blue-50"
-                        onClick={() =>
-                          navigate(
-                            `/vehicle-details2/${vehicle.registrationNumber}`
-                          )
-                        }
+                        type="button"
+                        onClick={fetchVehicles}
+                        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
                       >
-                        Detaljer <ArrowRightIcon className="w-[13px] h-[10px]" />
+                        <RefreshCw size={13} />
+                        Try Again
                       </button>
-                    </td>
-                  </tr>
-                  {/* {expandedId === vehicle.id && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="bg-[#E9EEF640] border-t border-gray-200"
-                      >
-                        <div className="p-6">
-                          <div className="grid md:grid-cols-2 grid-cols-1 gap-6">
-                            <div className="dashboard-cards p-4 rounded-[12px]">
-                              <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-base font-semibold text-gray-900">
-                                  {vehicle.vehicleName || "N/A"}
-                                </h3>
-                                <span className="font-semibold text-blue-900">
+                    </div>
+                  </td>
+                </tr>
+
+              ) : filteredVehicles.length === 0 ? (
+
+                /* Empty */
+                <tr>
+                  <td colSpan={7} className="px-4 py-16">
+                    <div className="mx-auto flex max-w-md flex-col items-center text-center">
+
+                      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
+                        <CarFront size={25} />
+                      </div>
+
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        No vehicles found
+                      </h3>
+
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {search
+                          ? "Try changing your search term."
+                          : "There are no vehicles available in the inventory yet."}
+                      </p>
+
+                      {search && (
+                        <button
+                          type="button"
+                          onClick={() => setSearch("")}
+                          className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-[#101F33] dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          Clear Search
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+
+              ) : (
+
+                /* Vehicles */
+                filteredVehicles.map((vehicle) => {
+                  const statusClass =
+                    statusStyles[vehicle.status] ||
+                    "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700";
+
+                  return (
+                    <React.Fragment key={vehicle.id}>
+                      <tr className="group bg-white transition-colors hover:bg-slate-50/80 dark:bg-[#0B1728] dark:hover:bg-[#101F33]">
+
+                        {/* Registration */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                              <CarFront size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-[#101F33]">
+                                <span className="flex items-center justify-center bg-gradient-to-b from-blue-500 to-blue-700 px-2 py-1.5 text-[10px] font-extrabold text-white">
+                                  S
+                                </span>
+
+                                <span className="px-2.5 py-1.5 text-xs font-extrabold tracking-wide text-slate-800 dark:text-slate-100">
                                   {vehicle.registrationNumber || "N/A"}
                                 </span>
                               </div>
-                              <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Type
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.type || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Status
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.status || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Price
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.price || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Registration Date
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {formatDate(vehicle.registrationDate) ||
-                                      "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Mileage
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.mileage || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Days in Stock
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.daysInStock || "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="dashboard-cards p-4 rounded-[12px]">
-                              <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-base font-semibold text-gray-900">
-                                  Vehicle Information
-                                </h3>
-                              </div>
-                              <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Fuel
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.fuelType || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Gearbox
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.gearbox || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Model Year
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.year || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Driving
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.drive || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    HorsePower
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.horsepower || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Color
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {vehicle.color || "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="dashboard-cards p-4 rounded-[12px]">
-                              <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-base font-semibold text-gray-900">
-                                  Equipment
-                                </h3>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2.5">
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Backstart help
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Rear ISOFIX mounts
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Start stop
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Makeup mirror
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Outdoor temperature meter
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Taklucka
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Back camera
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                                <div className="text-sm text-gray-500 mb-1">
-                                  Engine heater (with timer)
-                                  <div className="text-sm text-gray-900 mt-1">
-                                    {"N/A"}
-                                  </div>
-                                </div>
-                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )} */}
-                </React.Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
+                        </td>
+
+                        {/* Vehicle */}
+                        <td className="px-4 py-4">
+                          <div className="min-w-[160px]">
+                            <p className="truncate text-sm font-bold text-slate-800 dark:text-slate-100">
+                              {vehicle.vehicleName || "N/A"}
+                            </p>
+
+                            <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                              {vehicle.year && (
+                                <span className="inline-flex items-center gap-1">
+                                  <CalendarDays size={10} />
+                                  {vehicle.year}
+                                </span>
+                              )}
+
+                              {vehicle.fuelType && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Fuel size={10} />
+                                  {vehicle.fuelType}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Model */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <Settings2
+                              size={14}
+                              className="text-slate-400"
+                            />
+
+                            <div>
+                              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                {vehicle.model || "N/A"}
+                              </p>
+
+                              {vehicle.gearbox && (
+                                <p className="mt-0.5 text-[10px] text-slate-400">
+                                  {vehicle.gearbox}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-4 py-4">
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${statusClass}`}
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                            {vehicle.status || "N/A"}
+                          </span>
+                        </td>
+
+                        {/* Origin */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                            <MapPin
+                              size={13}
+                              className="shrink-0 text-slate-400"
+                            />
+
+                            <span>
+                              {vehicle.importOrigin || "N/A"}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Updated */}
+                        <td className="px-4 py-4">
+                          <div>
+                            <p className="whitespace-nowrap text-xs font-semibold text-slate-700 dark:text-slate-200">
+                              {formatDate(vehicle.updatedAt)}
+                            </p>
+
+                            {vehicle.mileage !== undefined && (
+                              <div className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
+                                <Gauge size={10} />
+                                {formatNumber(vehicle.mileage)} km
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Action */}
+                        <td className="px-4 py-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleViewDetails(
+                                vehicle.registrationNumber
+                              )
+                            }
+                            className="group/button inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-600 hover:text-white hover:shadow-md hover:shadow-blue-600/15 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:border-blue-600 dark:hover:bg-blue-600 dark:hover:text-white"
+                          >
+                            Details
+
+                            <ArrowUpRight
+                              size={14}
+                              className="transition-transform group-hover/button:translate-x-0.5 group-hover/button:-translate-y-0.5"
+                            />
+                          </button>
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* =========================================================
+            FOOTER
+        ========================================================= */}
+        {!isLoading && !error && filteredVehicles.length > 0 && (
+          <div className="mt-3 flex flex-col gap-2 px-1 text-[10px] text-slate-400 dark:text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Showing{" "}
+              <strong className="font-bold text-slate-600 dark:text-slate-300">
+                {filteredVehicles.length}
+              </strong>{" "}
+              vehicles
+              {search && " matching your search"}
+            </span>
+
+            <span className="inline-flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Inventory data synced
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

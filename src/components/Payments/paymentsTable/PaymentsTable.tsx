@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Download, FileText } from "lucide-react";
 import { pdf } from "@react-pdf/renderer";
 import AgreementPDF from "../../SignAgreement/AgreementPDF";
+
 import {
   TrashIcon,
   ArrowLeftIcon,
@@ -11,12 +12,14 @@ import {
   ViewAgreementIcon,
   EnvelopeAgreementIcon,
 } from "../../utils/Icons";
+
 import DeletePopup from "../../models/DeletePopup";
+
 import {
   makeGetRequest,
   makeDeleteRequest,
-  makePostRequest,
 } from "../../../api/Api";
+
 import toast from "react-hot-toast";
 import type { PaymentFilters } from "../../models/FilterPayments";
 
@@ -39,6 +42,7 @@ interface Payment {
   total_amount: number;
   createdAt: string;
   updatedAt: string;
+  status?: string;
 }
 
 interface PaymentsTableProps {
@@ -49,45 +53,303 @@ interface PaymentsTableProps {
   setFilteredCount: (count: number) => void;
 }
 
+/* =========================================================
+   EMAIL MODAL
+========================================================= */
+
 const EmailModal: React.FC<{
   open: boolean;
   onClose: () => void;
   onSend: (email: string) => void;
 }> = ({ open, onClose, onSend }) => {
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      setEmail("");
+    }
+  }, [open]);
+
   if (!open) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-[90vw] max-w-sm">
-        <h2 className="text-lg font-semibold mb-4">Skicka e-post</h2>
+    <div
+      className="
+        fixed inset-0 z-[100]
+        flex items-center justify-center
+        bg-black/50
+        backdrop-blur-sm
+        p-4
+      "
+    >
+      <div
+        className="
+          w-full max-w-md
+          rounded-2xl
+          p-6
+          bg-white dark:bg-[#111827]
+          border border-gray-200 dark:border-slate-700
+          shadow-2xl
+        "
+      >
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Send Email
+        </h2>
+
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">
+          Enter the email address where the payment information should be sent.
+        </p>
+
         <input
           type="email"
-          className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+          className="
+            w-full
+            border border-gray-300 dark:border-slate-700
+            bg-white dark:bg-slate-900
+            text-gray-900 dark:text-white
+            placeholder-gray-400 dark:placeholder-slate-500
+            rounded-lg
+            px-3 py-2.5
+            mb-5
+            outline-none
+            focus:ring-2
+            focus:ring-blue-500/30
+            focus:border-blue-500
+          "
           placeholder="Enter email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+
         <div className="flex justify-end gap-2">
           <button
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+            type="button"
+            className="
+              px-4 py-2
+              rounded-lg
+              bg-gray-100 dark:bg-slate-800
+              text-gray-700 dark:text-slate-200
+              hover:bg-gray-200 dark:hover:bg-slate-700
+              transition
+            "
             onClick={onClose}
           >
-            Nära
+            Close
           </button>
+
           <button
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            type="button"
+            className="
+              px-4 py-2
+              rounded-lg
+              bg-blue-600
+              text-white
+              hover:bg-blue-700
+              transition
+            "
             onClick={() => {
+              if (!email.trim()) {
+                toast.error("Please enter an email address.");
+                return;
+              }
+
               onSend(email);
               onClose();
             }}
           >
-            Skicka
+            Send
           </button>
         </div>
       </div>
     </div>
   );
 };
+
+/* =========================================================
+   PDF PREVIEW
+========================================================= */
+
+const PDFPreview: React.FC<{
+  agreement: Payment;
+}> = ({ agreement }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleDownloadPDF = async () => {
+    if (!agreement) {
+      toast.error("Agreement data not available");
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      toast.loading("Generating PDF...", {
+        id: "pdf-generation",
+      });
+
+      const blob = await pdf(
+        <AgreementPDF
+          agreementData={agreement}
+          agreementID={agreement.id?.toString() || "N/A"}
+        />
+      ).toBlob();
+
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+
+      link.href = url;
+
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/:/g, "-");
+
+      link.download = `Payment-${agreement.id}-${timestamp}.pdf`;
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+
+      toast.success("PDF downloaded successfully!", {
+        id: "pdf-generation",
+      });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+
+      toast.error(
+        "Failed to generate PDF. Please try again.",
+        {
+          id: "pdf-generation",
+        }
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div
+      className="
+        bg-gray-50 dark:bg-slate-900/70
+        border border-gray-200 dark:border-slate-700
+        rounded-xl
+        p-4
+      "
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-blue-600" />
+
+          <span className="font-medium text-gray-800 dark:text-white">
+            Payment PDF
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleDownloadPDF}
+          disabled={isGenerating}
+          className="
+            flex items-center justify-center gap-2
+            px-3 py-2
+            bg-blue-600
+            text-white
+            rounded-lg
+            hover:bg-blue-700
+            disabled:opacity-50
+            disabled:cursor-not-allowed
+            text-sm
+            transition
+          "
+        >
+          {isGenerating ? (
+            <>
+              <div
+                className="
+                  w-4 h-4
+                  border-2
+                  border-white
+                  border-t-transparent
+                  rounded-full
+                  animate-spin
+                "
+              />
+
+              <span>Generating...</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              <span>Download</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      <div
+        className="
+          bg-white dark:bg-slate-950
+          border border-gray-200 dark:border-slate-700
+          rounded-xl
+          overflow-hidden
+        "
+      >
+        <div
+          className="
+            h-48
+            bg-gradient-to-br
+            from-blue-50 to-gray-50
+            dark:from-blue-950/30 dark:to-slate-900
+            flex items-center justify-center
+          "
+        >
+          <div className="text-center px-4">
+            <FileText className="w-12 h-12 text-blue-400 mx-auto mb-2" />
+
+            <p className="text-sm text-gray-700 dark:text-slate-200 mb-1">
+              Payment #{agreement.id}
+            </p>
+
+            <p className="text-xs text-gray-500 dark:text-slate-400">
+              {agreement.customer_reference || "N/A"}
+            </p>
+
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+              {agreement.payment_category || "N/A"}
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="
+            p-3
+            bg-white dark:bg-slate-950
+            border-t border-gray-100 dark:border-slate-800
+          "
+        >
+          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-slate-400">
+            <span>PDF Document</span>
+
+            <span>
+              {new Date(
+                agreement.createdAt || Date.now()
+              ).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* =========================================================
+   PAYMENTS TABLE
+========================================================= */
 
 const PaymentsTable: React.FC<PaymentsTableProps> = ({
   search,
@@ -100,26 +362,47 @@ const PaymentsTable: React.FC<PaymentsTableProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [page, setPage] = useState(1);
-  const [deletePopupId, setDeletePopupId] = useState<string | null>(null);
   const [pageSize, setPageSize] = useState(10);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  
+
+  const [deletePopupId, setDeletePopupId] =
+    useState<string | null>(null);
+
+  const [showEmailModal, setShowEmailModal] =
+    useState(false);
+
+  /* =========================================================
+     FETCH PAYMENTS
+  ========================================================= */
 
   useEffect(() => {
     const fetchPayments = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        const response = await makeGetRequest("payments/getAllPayments");
-        if (response.data && response.data.success) {
-          setPayments(response.data.data);
+        const response = await makeGetRequest(
+          "payments/getAllPayments"
+        );
+
+        if (
+          response.data &&
+          response.data.success
+        ) {
+          setPayments(response.data.data || []);
         } else {
-          setError(response.data?.message || "Failed to fetch payments.");
+          setError(
+            response.data?.message ||
+              "Failed to fetch payments."
+          );
         }
       } catch (err) {
-        setError("An error occurred while fetching payments.");
         console.error(err);
+
+        setError(
+          "An error occurred while fetching payments."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -128,623 +411,1052 @@ const PaymentsTable: React.FC<PaymentsTableProps> = ({
     fetchPayments();
   }, []);
 
-  const filtered = payments.filter((p) => {
-    const searchMatch =
-      p.customer_reference.toLowerCase().includes(search.toLowerCase()) ||
-      p.customer_name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.payment_category &&
-        p.payment_category.toLowerCase().includes(search.toLowerCase())) ||
-      (p.description &&
-        p.description.toLowerCase().includes(search.toLowerCase()));
+  /* =========================================================
+     FILTER
+  ========================================================= */
 
-    if (!searchMatch) return false;
+  const filtered = useMemo(() => {
+    const searchValue = search.trim().toLowerCase();
 
-    if (filters.category && p.payment_category !== filters.category) {
-      return false;
-    }
+    return payments.filter((p) => {
+      const searchMatch =
+        !searchValue ||
+        String(p.customer_reference || "")
+          .toLowerCase()
+          .includes(searchValue) ||
+        String(p.customer_name || "")
+          .toLowerCase()
+          .includes(searchValue) ||
+        String(p.payment_category || "")
+          .toLowerCase()
+          .includes(searchValue) ||
+        String(p.description || "")
+          .toLowerCase()
+          .includes(searchValue);
 
-    if (filters.status) {
-      const paymentStatus = "completed";
-      if (paymentStatus !== filters.status.toLowerCase()) {
+      if (!searchMatch) return false;
+
+      if (
+        filters.category &&
+        p.payment_category !== filters.category
+      ) {
         return false;
       }
-    }
 
-    const paymentDate = new Date(p.createdAt);
-    if (filters.fromDate) {
-      if (paymentDate < new Date(filters.fromDate)) return false;
-    }
-    if (filters.toDate) {
-      const toDate = new Date(filters.toDate);
-      toDate.setHours(23, 59, 59, 999);
-      if (paymentDate > toDate) return false;
-    }
+      if (filters.status) {
+        const paymentStatus =
+          p.status?.toLowerCase() || "completed";
 
-    if (filters.minAmount && p.total_amount < parseFloat(filters.minAmount)) {
-      return false;
-    }
-    if (filters.maxAmount && p.total_amount > parseFloat(filters.maxAmount)) {
-      return false;
-    }
+        if (
+          paymentStatus !==
+          filters.status.toLowerCase()
+        ) {
+          return false;
+        }
+      }
 
-    return true;
-  });
+      const paymentDate = new Date(p.createdAt);
+
+      if (filters.fromDate) {
+        const fromDate = new Date(filters.fromDate);
+        fromDate.setHours(0, 0, 0, 0);
+
+        if (paymentDate < fromDate) {
+          return false;
+        }
+      }
+
+      if (filters.toDate) {
+        const toDate = new Date(filters.toDate);
+
+        toDate.setHours(23, 59, 59, 999);
+
+        if (paymentDate > toDate) {
+          return false;
+        }
+      }
+
+      if (
+        filters.minAmount &&
+        p.total_amount <
+          Number(filters.minAmount)
+      ) {
+        return false;
+      }
+
+      if (
+        filters.maxAmount &&
+        p.total_amount >
+          Number(filters.maxAmount)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [payments, search, filters]);
 
   useEffect(() => {
     setFilteredCount(filtered.length);
-  }, [filtered, setFilteredCount]);
+  }, [filtered.length, setFilteredCount]);
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  /* =========================================================
+     PAGINATION
+  ========================================================= */
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / pageSize)
+  );
+
+  const paginated = filtered.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [pageSize, search, filters]);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
+
+  /* =========================================================
+     HELPERS
+  ========================================================= */
 
   const handleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
+    setExpandedId(
+      expandedId === id ? null : id
+    );
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+      return "N/A";
+    }
+
+    return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
     });
   };
 
-  useEffect(() => {
-    setPage(1);
-  }, [pageSize, search, filtered.length]);
-
-  useEffect(() => {
-    if ((page - 1) * pageSize >= filtered.length) {
-      setPage(1);
-    }
-  }, [page, pageSize, filtered.length]);
-
-  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPageSize = Number(e.target.value);
-    setPageSize(newPageSize);
+  const formatAmount = (amount: number) => {
+    return Number(amount || 0).toLocaleString(
+      "en-US"
+    );
   };
+
+  const handlePageSizeChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setPageSize(Number(e.target.value));
+  };
+
+  /* =========================================================
+     DELETE
+  ========================================================= */
 
   const handleDeletePayment = async () => {
     if (!deletePopupId) return;
 
     setIsDeleting(true);
+
     try {
-      const response = await makeDeleteRequest(
-        `payments/deletePayment/${deletePopupId}`
-      );
-      if (response.data && response.data.success) {
-        setPayments(payments.filter((p) => p.id.toString() !== deletePopupId));
-        toast.success("Payment deleted successfully!");
+      const response =
+        await makeDeleteRequest(
+          `payments/deletePayment/${deletePopupId}`
+        );
+
+      if (
+        response.data &&
+        response.data.success
+      ) {
+        setPayments((current) =>
+          current.filter(
+            (p) =>
+              p.id.toString() !==
+              deletePopupId
+          )
+        );
+
+        toast.success(
+          "Payment deleted successfully!"
+        );
+
         setDeletePopupId(null);
       } else {
-        toast.error(response.data?.message || "Failed to delete payment.");
+        toast.error(
+          response.data?.message ||
+            "Failed to delete payment."
+        );
       }
     } catch (err) {
-      toast.error("An error occurred while deleting the payment.");
       console.error(err);
+
+      toast.error(
+        "An error occurred while deleting the payment."
+      );
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleSwishPayment = async (payment: Payment) => {
-    try {
-      // Create a UUID for the payout instruction
-      const payoutInstructionUUID = `${Date.now()}-${payment.id}`;
-
-      const payload = {
-        payoutInstructionUUID,
-        payerPaymentReference:
-          payment.customer_reference || `Payment-${payment.id}`,
-        payerAlias: "1231181189", // This should be your Swish number
-        payeeAlias: payment.telephone_number || "0700000000", // Customer's phone number
-        payeeSSN: payment.social_security_number || "0000000000", // Customer's SSN
-        amount: payment.total_amount,
-        currency: "SEK",
-        payoutType: "PAYOUT",
-        instructionDate: new Date().toISOString(),
-        message: `Payment for ${payment.customer_reference || "order"}`,
-      };
-
-      const swishPayload = {
-        payload,
-        callbackUrl: "https://dealer.clubpadel.se/api/swish-callback", // Your callback URL
-        callbackIdentifier: payoutInstructionUUID,
-      };
-
-      const response = await makePostRequest(
-        "payouts/swish-cpcapi/api/v1/payouts",
-        swishPayload
-      );
-
-      if (response.data && response.data.success) {
-        toast.success("Swish payment initiated successfully!");
-      } else {
-        toast.error(
-          response.data?.message || "Failed to initiate Swish payment"
-        );
-      }
-    } catch (error: any) {
-      console.error("Error initiating Swish payment:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to initiate Swish payment";
-      toast.error(errorMessage);
-    }
-  };
-
-  console.log(handleSwishPayment);
-
-  const PDFPreview: React.FC<{
-  agreement: any;
-  }> = ({ agreement }) => {
-    const [isGenerating, setIsGenerating] = useState(false);
-    console.log("--------------------")
-    console.log(agreement)
-    console.log("--------------------")
-    const handleDownloadPDF = async () => {
-      if (!agreement) {
-        toast.error("Agreement data not available");
-        return;
-      }
-
-      try {
-        setIsGenerating(true);
-        toast.loading("Generating PDF...", { id: "pdf-generation" });
-
-        const blob = await pdf(
-          <AgreementPDF
-            agreementData={agreement}
-            agreementID={agreement.id?.toString() || "N/A"}
-          />
-        ).toBlob();
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-
-        const timestamp = new Date()
-          .toISOString()
-          .slice(0, 19)
-          .replace(/:/g, "-");
-        link.download = `Agreement-${agreement.id}-${timestamp}.pdf`;
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        toast.success("PDF downloaded successfully!", { id: "pdf-generation" });
-      } catch (error) {
-        console.error("Error generating PDF:", error);
-        toast.error("Failed to generate PDF. Please try again.", {
-          id: "pdf-generation",
-        });
-      } finally {
-        setIsGenerating(false);
-      }
-    };
-
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            <span className="font-medium text-gray-800">Agreement PDF</span>
-          </div>
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isGenerating}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {isGenerating ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                <span>Download</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <div className="h-48 bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center">
-            <div className="text-center">
-              <FileText className="w-12 h-12 text-blue-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600 mb-1">
-                Agreement #{agreement.id}
-              </p>
-              <p className="text-xs text-gray-500">
-                {agreement.registrationNumber || "N/A"}
-              </p>
-              <p className="text-xs text-gray-500">{agreement.type || "N/A"}</p>
-            </div>
-          </div>
-          <div className="p-3 bg-white border-t border-gray-100">
-            <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>PDF Document</span>
-              <span>
-                {new Date(agreement.createdAt || Date.now()).toLocaleDateString()}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  /* =========================================================
+     RENDER
+  ========================================================= */
 
   return (
     <>
       {deletePopupId !== null && (
         <DeletePopup
           entityName="Payment"
-          onCancel={() => setDeletePopupId(null)}
+          onCancel={() =>
+            setDeletePopupId(null)
+          }
           onDelete={handleDeletePayment}
           isDeleting={isDeleting}
         />
       )}
+
       <EmailModal
         open={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        onSend={() => {
-          alert("button clicked");
+        onClose={() =>
+          setShowEmailModal(false)
+        }
+        onSend={(email) => {
+          console.log(
+            "Email requested:",
+            email
+          );
+
+          toast.success(
+            "Email action selected."
+          );
         }}
       />
-      <div className="overflow-hidden rounded-lg border border-gray-200 font-plus-jakarta max-h-[500px] min-h-[500px] overflow-y-auto overflow-x-auto">
-        <table className="min-w-full">
-          <thead className="bg-[#F0F7FF] sticky top-0 z-10">
-            <tr>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
-                Hänvisning
-              </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
-                Namn
-              </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
-                Belopp
-              </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
-                Datum
-              </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
-                Status
-              </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700">
-                Bank-ID
-              </th>
-              <th className="md:py-3 py-1.5 md:px-4 px-2 text-left text-sm font-medium text-gray-700 flex items-center justify-center">
-                Åtgärder
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading ? (
+
+      {/* TABLE WRAPPER */}
+      <div
+        className="
+          w-full
+          overflow-hidden
+          rounded-xl
+          border
+          border-gray-200 dark:border-slate-700
+          font-plus-jakarta
+          bg-white dark:bg-[#0b1220]
+        "
+      >
+        {/* HORIZONTAL SCROLL */}
+        <div className="overflow-x-auto">
+          <table className="min-w-[1050px] w-full">
+            <thead
+              className="
+                bg-[#F0F7FF]
+                dark:bg-slate-900
+                sticky top-0
+                z-10
+              "
+            >
               <tr>
-                <td colSpan={8} className="py-6 text-center">
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                  </div>
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={8} className="py-6 text-center text-red-500">
-                  {error}
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="py-6 text-center text-gray-500">
-                  Inga betalningar hittades
-                </td>
-              </tr>
-            ) : (
-              paginated.map((payment) => (
-                <React.Fragment key={payment.id}>
-                  <tr
-                    className={`hover:bg-gray-50 ${
-                      expandedId === payment.id.toString()
-                        ? "bg-[#E9EEF640]"
-                        : ""
-                    }`}
+                {[
+                  "Reference",
+                  "Name",
+                  "Amount",
+                  "Date",
+                  "Status",
+                  "Bank-ID",
+                  "Actions",
+                ].map((heading) => (
+                  <th
+                    key={heading}
+                    className="
+                      py-3
+                      px-4
+                      text-left
+                      text-xs
+                      sm:text-sm
+                      font-semibold
+                      text-gray-700
+                      dark:text-slate-300
+                      whitespace-nowrap
+                    "
                   >
-                    <td className="md:py-4 py-1.5 md:px-4 px-2">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleExpand(payment.id.toString())}
-                          className="flex items-center justify-center w-6 h-6 hover:bg-gray-200 rounded transition-colors cursor-pointer"
-                        >
-                          <span
-                            className={`text-gray-400 text-xs transition-transform ${
-                              expandedId === payment.id.toString()
-                                ? "rotate-180"
-                                : ""
-                            }`}
-                          >
-                            <ArrowCollapseIcon className="rotate-270" />
-                          </span>
-                        </button>
-                        <span className="font-semibold text-blue-900">
-                          {payment.customer_reference || "N/A"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
-                      {payment.customer_name || "N/A"}
-                    </td>
-                    <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-900">
-                      {payment.total_amount.toLocaleString() || "N/A"}
-                    </td>
-                    <td className="md:py-4 py-1.5 md:px-4 px-2 text-sm text-gray-700">
-                      {formatDate(payment.createdAt) || "N/A"}
-                    </td>
-                    <td className="md:py-4 py-1.5 md:px-4 px-2">
-                      <span className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                        Utbetalt
-                      </span>
-                    </td>
-                    <td className="md:py-4 py-1.5 md:px-4 px-2">
-                      <button
-                        className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition-colors cursor-pointer bg-blue-600 text-white hover:bg-blue-700`}
-                        onClick={() => {}}
-                      >
-                        BankID
-                      </button>
-                    </td>
-                    <td className="md:py-4 py-1.5 md:px-4 px-2 flex items-center justify-center gap-1">
-                      <button
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-md transition-colors cursor-pointer"
-                        onClick={() => setDeletePopupId(payment.id.toString())}
-                      >
-                        <TrashIcon />
-                      </button>
-                      
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody
+              className="
+                divide-y
+                divide-gray-200
+                dark:divide-slate-800
+              "
+            >
+              {/* LOADING */}
+              {isLoading && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="py-12 text-center"
+                  >
+                    <div className="flex justify-center">
+                      <div
+                        className="
+                          animate-spin
+                          rounded-full
+                          h-8 w-8
+                          border-2
+                          border-blue-500
+                          border-t-transparent
+                        "
+                      />
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {/* ERROR */}
+              {!isLoading && error && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="
+                      py-12
+                      text-center
+                      text-red-500
+                      dark:text-red-400
+                    "
+                  >
+                    {error}
+                  </td>
+                </tr>
+              )}
+
+              {/* EMPTY */}
+              {!isLoading &&
+                !error &&
+                filtered.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="
+                        py-12
+                        text-center
+                        text-gray-500
+                        dark:text-slate-400
+                      "
+                    >
+                      No payments found
                     </td>
                   </tr>
-                  {expandedId === payment.id.toString() && (
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="bg-[#E9EEF640] border-t border-gray-200"
+                )}
+
+              {/* DATA */}
+              {!isLoading &&
+                !error &&
+                paginated.map((payment) => {
+                  const paymentId =
+                    payment.id.toString();
+
+                  const isExpanded =
+                    expandedId === paymentId;
+
+                  return (
+                    <React.Fragment
+                      key={payment.id}
+                    >
+                      <tr
+                        className={`
+                          transition-colors
+                          hover:bg-gray-50
+                          dark:hover:bg-slate-900/60
+                          ${
+                            isExpanded
+                              ? "bg-blue-50/40 dark:bg-blue-950/20"
+                              : "bg-white dark:bg-[#0b1220]"
+                          }
+                        `}
                       >
-                        <div className="p-6">
-                          <div className="flex flex-col gap-6">
-                            <div className="mb-6  bg-white rounded-lg border border-gray-200 overflow-hidden">
-                              <h3 className="bg-[#F0F7FF] px-6 py-4 flex justify-between">
-                                Betalningsinformation
-                              </h3>
-                              <div className="p-6 grid grid-cols-2 gap-6">
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Hänvisning
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.customer_reference || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Namn
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.customer_name || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Totalt belopp
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.total_amount.toLocaleString() ||
-                                      "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Datum
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {formatDate(payment.createdAt) || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Kategori
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.payment_category || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    E-post
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.email || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Transaktions-ID
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.id || "N/A"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 mb-1">
-                                    Telefon
-                                  </div>
-                                  <div className="text-sm text-gray-900">
-                                    {payment.telephone_number || "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                        {/* REFERENCE */}
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleExpand(
+                                  paymentId
+                                )
+                              }
+                              className="
+                                flex items-center
+                                justify-center
+                                w-7 h-7
+                                rounded-md
+                                hover:bg-gray-200
+                                dark:hover:bg-slate-700
+                                transition
+                                cursor-pointer
+                              "
+                            >
+                              <ArrowCollapseIcon
+                                className={`
+                                  transition-transform
+                                  ${
+                                    isExpanded
+                                      ? "rotate-90"
+                                      : "-rotate-90"
+                                  }
+                                `}
+                              />
+                            </button>
 
-                            {/* Amount Items Section */}
-                            <div>
-                              <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                                Beloppsfördelning
-                              </h4>
-                              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                <table className="min-w-full">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Beskrivning
-                                      </th>
-                                      <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Belopp
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-200">
-                                    {payment.amount_items.map((item, index) => (
-                                      <tr key={index}>
-                                        <td className="px-4 py-3 text-sm text-gray-900">
-                                          {item.description || "N/A"}
-                                        </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                                          {item.amount.toLocaleString() ||
-                                            "N/A"}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                    <tr className="bg-gray-50">
-                                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                                        Total
-                                      </td>
-                                      <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                                        {payment.total_amount.toLocaleString() ||
-                                          "N/A"}
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-
-
-                            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                              <div className="bg-[#F0F7FF] px-6 py-4 flex justify-between items-center">
-                                <h2 className="text-lg font-semibold text-gray-900">
-                                  Dokument
-                                </h2>
-                              </div>
-                              <div className="p-6">
-                                <div className="space-y-3">
-                                  <PDFPreview agreement={payment} />
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex justify-end items-center gap-3 mt-4">
-                              <button className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer">
-                                <EditAgreementIcon />
-                                Redigera
-                              </button>
-                              <button className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer">
-                                <ViewAgreementIcon />
-                                Ladda ner
-                              </button>
-                              <button
-                                className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
-                                onClick={() => setShowEmailModal(true)}
-                              >
-                                <EnvelopeAgreementIcon />
-                                E-post
-                              </button>
-                              {/* <button
-                                className="px-4 py-2 text-[#012F7A] border border-blue-600 rounded-lg hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
-                                onClick={() => handleSwishPayment(payment)}
-                              >
-                                <SwishaAgreementIcon />
-                                Swisha
-                              </button>
-                              <button className="px-4 py-2 text-white bg-[#012F7A] rounded-lg hover:bg-[#012F7A]/90 flex items-center gap-2 cursor-pointer">
-                                <SignAgreementIcon />
-                                Sign Agreement
-                              </button> */}
-                            </div>
+                            <span
+                              className="
+                                font-semibold
+                                text-blue-900
+                                dark:text-blue-400
+                                whitespace-nowrap
+                              "
+                            >
+                              {payment.customer_reference ||
+                                "N/A"}
+                            </span>
                           </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-      {!isLoading && !error && filtered.length > 0 && (
-        <div className="flex justify-between md:flex-row flex-col md:items-center items-start mt-6 md:gap-0 gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>Visa</span>
-            <select
-              className="border border-gray-300 rounded px-2 py-1 text-sm cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={pageSize}
-              onChange={handlePageSizeChange}
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-            <span>poster av {filtered.length} poster</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-3 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
-            >
-              <ArrowLeftIcon className="w-[6px] h-[10px]" />
-            </button>
-            {[...Array(Math.min(5, totalPages)).keys()].map((i) => {
-              let pageNum = i + 1;
-              if (page > 3 && totalPages > 5) {
-                pageNum = page - 2 + i;
-              }
-              if (pageNum < 1 || pageNum > totalPages) return null;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setPage(pageNum)}
-                  className={`px-3 py-2 text-sm border rounded-md cursor-pointer ${
-                    page === pageNum
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-            {totalPages > 5 && page < totalPages - 2 && (
-              <span className="px-2 text-gray-500">...</span>
-            )}
-            {totalPages > 1 && page < totalPages - 1 && totalPages > 5 && (
-              <button
-                onClick={() => setPage(totalPages)}
-                className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
-              >
-                {totalPages}
-              </button>
-            )}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-3 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
-            >
-              <ArrowLeftDoubleIcon className="w-[6px] h-[10px] rotate-180" />
-            </button>
-          </div>
+                        </td>
+
+                        {/* NAME */}
+                        <td
+                          className="
+                            py-4 px-4
+                            text-sm
+                            text-gray-700
+                            dark:text-slate-300
+                            whitespace-nowrap
+                          "
+                        >
+                          {payment.customer_name ||
+                            "N/A"}
+                        </td>
+
+                        {/* AMOUNT */}
+                        <td
+                          className="
+                            py-4 px-4
+                            text-sm
+                            font-medium
+                            text-gray-900
+                            dark:text-white
+                            whitespace-nowrap
+                          "
+                        >
+                          {formatAmount(
+                            payment.total_amount
+                          )}
+                        </td>
+
+                        {/* DATE */}
+                        <td
+                          className="
+                            py-4 px-4
+                            text-sm
+                            text-gray-700
+                            dark:text-slate-300
+                            whitespace-nowrap
+                          "
+                        >
+                          {formatDate(
+                            payment.createdAt
+                          )}
+                        </td>
+
+                        {/* STATUS */}
+                        <td className="py-4 px-4">
+                          <span
+                            className="
+                              inline-flex
+                              px-3 py-1
+                              rounded-full
+                              text-xs
+                              font-medium
+                              bg-green-100
+                              dark:bg-green-950/40
+                              text-green-700
+                              dark:text-green-400
+                              whitespace-nowrap
+                            "
+                          >
+                            Paid
+                          </span>
+                        </td>
+
+                        {/* BANK ID */}
+                        <td className="py-4 px-4">
+                          <button
+                            type="button"
+                            className="
+                              px-3 py-1.5
+                              rounded-md
+                              text-xs
+                              font-medium
+                              bg-blue-600
+                              hover:bg-blue-700
+                              text-white
+                              transition
+                              cursor-pointer
+                              whitespace-nowrap
+                            "
+                          >
+                            BankID
+                          </button>
+                        </td>
+
+                        {/* ACTIONS */}
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setDeletePopupId(
+                                  paymentId
+                                )
+                              }
+                              className="
+                                text-red-500
+                                hover:text-red-700
+                                dark:hover:text-red-400
+                                hover:bg-red-50
+                                dark:hover:bg-red-950/30
+                                p-2
+                                rounded-md
+                                transition
+                                cursor-pointer
+                              "
+                              title="Delete payment"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* EXPANDED ROW */}
+                      {isExpanded && (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="
+                              bg-[#E9EEF640]
+                              dark:bg-slate-900/40
+                              border-t
+                              border-gray-200
+                              dark:border-slate-800
+                            "
+                          >
+                            <div className="p-4 sm:p-6">
+                              <div className="flex flex-col gap-6">
+
+                                {/* PAYMENT INFO */}
+                                <div
+                                  className="
+                                    bg-white
+                                    dark:bg-slate-950
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    dark:border-slate-700
+                                    overflow-hidden
+                                  "
+                                >
+                                  <h3
+                                    className="
+                                      bg-[#F0F7FF]
+                                      dark:bg-slate-900
+                                      px-5 sm:px-6
+                                      py-4
+                                      text-sm sm:text-base
+                                      font-semibold
+                                      text-gray-900
+                                      dark:text-white
+                                    "
+                                  >
+                                    Payment Information
+                                  </h3>
+
+                                  <div
+                                    className="
+                                      p-5 sm:p-6
+                                      grid
+                                      grid-cols-1
+                                      sm:grid-cols-2
+                                      lg:grid-cols-4
+                                      gap-5
+                                    "
+                                  >
+                                    {[
+                                      [
+                                        "Reference",
+                                        payment.customer_reference,
+                                      ],
+                                      [
+                                        "Name",
+                                        payment.customer_name,
+                                      ],
+                                      [
+                                        "Total Amount",
+                                        formatAmount(
+                                          payment.total_amount
+                                        ),
+                                      ],
+                                      [
+                                        "Date",
+                                        formatDate(
+                                          payment.createdAt
+                                        ),
+                                      ],
+                                      [
+                                        "Category",
+                                        payment.payment_category,
+                                      ],
+                                      [
+                                        "Email",
+                                        payment.email,
+                                      ],
+                                      [
+                                        "Transaction ID",
+                                        payment.id,
+                                      ],
+                                      [
+                                        "Phone",
+                                        payment.telephone_number,
+                                      ],
+                                    ].map(
+                                      ([label, value]) => (
+                                        <div
+                                          key={String(
+                                            label
+                                          )}
+                                        >
+                                          <div className="text-xs text-gray-500 dark:text-slate-500 mb-1">
+                                            {label}
+                                          </div>
+
+                                          <div className="text-sm text-gray-900 dark:text-slate-200 break-words">
+                                            {value ||
+                                              "N/A"}
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* AMOUNT ITEMS */}
+                                <div>
+                                  <h4
+                                    className="
+                                      text-sm
+                                      font-semibold
+                                      text-gray-900
+                                      dark:text-white
+                                      mb-3
+                                    "
+                                  >
+                                    Amount Breakdown
+                                  </h4>
+
+                                  <div
+                                    className="
+                                      bg-white
+                                      dark:bg-slate-950
+                                      rounded-xl
+                                      border
+                                      border-gray-200
+                                      dark:border-slate-700
+                                      overflow-x-auto
+                                    "
+                                  >
+                                    <table className="min-w-full">
+                                      <thead
+                                        className="
+                                          bg-gray-50
+                                          dark:bg-slate-900
+                                        "
+                                      >
+                                        <tr>
+                                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">
+                                            Description
+                                          </th>
+
+                                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">
+                                            Amount
+                                          </th>
+                                        </tr>
+                                      </thead>
+
+                                      <tbody
+                                        className="
+                                          divide-y
+                                          divide-gray-200
+                                          dark:divide-slate-800
+                                        "
+                                      >
+                                        {(
+                                          payment.amount_items ||
+                                          []
+                                        ).map(
+                                          (
+                                            item,
+                                            index
+                                          ) => (
+                                            <tr
+                                              key={
+                                                index
+                                              }
+                                            >
+                                              <td className="px-4 py-3 text-sm text-gray-900 dark:text-slate-200">
+                                                {item.description ||
+                                                  "N/A"}
+                                              </td>
+
+                                              <td className="px-4 py-3 text-sm text-gray-900 dark:text-slate-200 text-right font-medium">
+                                                {formatAmount(
+                                                  item.amount
+                                                )}
+                                              </td>
+                                            </tr>
+                                          )
+                                        )}
+
+                                        <tr className="bg-gray-50 dark:bg-slate-900">
+                                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                            Total
+                                          </td>
+
+                                          <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-right">
+                                            {formatAmount(
+                                              payment.total_amount
+                                            )}
+                                          </td>
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+
+                                {/* DOCUMENT */}
+                                <div
+                                  className="
+                                    bg-white
+                                    dark:bg-slate-950
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    dark:border-slate-700
+                                    overflow-hidden
+                                  "
+                                >
+                                  <div
+                                    className="
+                                      bg-[#F0F7FF]
+                                      dark:bg-slate-900
+                                      px-5 sm:px-6
+                                      py-4
+                                    "
+                                  >
+                                    <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                                      Document
+                                    </h2>
+                                  </div>
+
+                                  <div className="p-4 sm:p-6">
+                                    <PDFPreview
+                                      agreement={
+                                        payment
+                                      }
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* ACTIONS */}
+                                <div
+                                  className="
+                                    flex
+                                    flex-wrap
+                                    justify-end
+                                    items-center
+                                    gap-3
+                                  "
+                                >
+                                  <button
+                                    type="button"
+                                    className="
+                                      px-4 py-2
+                                      text-[#012F7A]
+                                      dark:text-blue-400
+                                      border
+                                      border-blue-600
+                                      dark:border-blue-800
+                                      rounded-lg
+                                      hover:bg-blue-50
+                                      dark:hover:bg-blue-950/30
+                                      flex items-center
+                                      gap-2
+                                      cursor-pointer
+                                      transition
+                                    "
+                                  >
+                                    <EditAgreementIcon />
+                                    Edit
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const button =
+                                        document.querySelector(
+                                          `[data-pdf-payment="${payment.id}"]`
+                                        ) as HTMLButtonElement | null;
+
+                                      button?.click();
+                                    }}
+                                    className="
+                                      px-4 py-2
+                                      text-[#012F7A]
+                                      dark:text-blue-400
+                                      border
+                                      border-blue-600
+                                      dark:border-blue-800
+                                      rounded-lg
+                                      hover:bg-blue-50
+                                      dark:hover:bg-blue-950/30
+                                      flex items-center
+                                      gap-2
+                                      cursor-pointer
+                                      transition
+                                    "
+                                  >
+                                    <ViewAgreementIcon />
+                                    Download
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setShowEmailModal(
+                                        true
+                                      )
+                                    }
+                                    className="
+                                      px-4 py-2
+                                      text-[#012F7A]
+                                      dark:text-blue-400
+                                      border
+                                      border-blue-600
+                                      dark:border-blue-800
+                                      rounded-lg
+                                      hover:bg-blue-50
+                                      dark:hover:bg-blue-950/30
+                                      flex items-center
+                                      gap-2
+                                      cursor-pointer
+                                      transition
+                                    "
+                                  >
+                                    <EnvelopeAgreementIcon />
+                                    Email
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
+
+      {/* PAGINATION */}
+      {!isLoading &&
+        !error &&
+        filtered.length > 0 && (
+          <div
+            className="
+              flex
+              flex-col
+              md:flex-row
+              md:items-center
+              md:justify-between
+              gap-4
+              mt-5
+            "
+          >
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
+              <span>Show</span>
+
+              <select
+                value={pageSize}
+                onChange={handlePageSizeChange}
+                className="
+                  border
+                  border-gray-300
+                  dark:border-slate-700
+                  bg-white
+                  dark:bg-slate-900
+                  text-gray-700
+                  dark:text-slate-200
+                  rounded-md
+                  px-2 py-1
+                  text-sm
+                  cursor-pointer
+                  outline-none
+                "
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+
+              <span>
+                out of {filtered.length} payments
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((p) =>
+                    Math.max(1, p - 1)
+                  )
+                }
+                disabled={page === 1}
+                className="
+                  px-3 py-2.5
+                  text-sm
+                  border
+                  border-gray-300
+                  dark:border-slate-700
+                  rounded-md
+                  disabled:opacity-40
+                  hover:bg-gray-50
+                  dark:hover:bg-slate-800
+                  cursor-pointer
+                "
+              >
+                <ArrowLeftIcon className="w-[6px] h-[10px]" />
+              </button>
+
+              {Array.from(
+                { length: totalPages },
+                (_, index) => index + 1
+              )
+                .filter(
+                  (pageNum) =>
+                    pageNum <= 5
+                )
+                .map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() =>
+                      setPage(pageNum)
+                    }
+                    className={`
+                      min-w-9
+                      px-3 py-2
+                      text-sm
+                      border
+                      rounded-md
+                      cursor-pointer
+                      ${
+                        page === pageNum
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
+                      }
+                    `}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
+              {totalPages > 5 && (
+                <>
+                  <span className="px-1 text-gray-500">
+                    ...
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPage(totalPages)
+                    }
+                    className="
+                      min-w-9
+                      px-3 py-2
+                      text-sm
+                      border
+                      border-gray-300
+                      dark:border-slate-700
+                      rounded-md
+                      hover:bg-gray-50
+                      dark:hover:bg-slate-800
+                      cursor-pointer
+                    "
+                  >
+                    {totalPages}
+                  </button>
+                </>
+              )}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setPage((p) =>
+                    Math.min(
+                      totalPages,
+                      p + 1
+                    )
+                  )
+                }
+                disabled={
+                  page === totalPages
+                }
+                className="
+                  px-3 py-2.5
+                  text-sm
+                  border
+                  border-gray-300
+                  dark:border-slate-700
+                  rounded-md
+                  disabled:opacity-40
+                  hover:bg-gray-50
+                  dark:hover:bg-slate-800
+                  cursor-pointer
+                "
+              >
+                <ArrowLeftDoubleIcon className="w-[6px] h-[10px] rotate-180" />
+              </button>
+            </div>
+          </div>
+        )}
     </>
   );
 };

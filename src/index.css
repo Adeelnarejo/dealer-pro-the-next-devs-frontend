@@ -1,13 +1,17 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @media print {
   body * {
     visibility: hidden;
   }
+
   .printable-area,
   .printable-area * {
     visibility: visible;
   }
+
   .printable-area {
     position: absolute;
     left: 0;
@@ -17,6 +21,7 @@
     padding: 20px;
     margin: 0;
   }
+
   .no-print {
     display: none !important;
   }
@@ -49,6 +54,7 @@
   background-repeat: no-repeat;
 }
 
+/* Hamburger */
 #checkbox2 {
   display: none;
 }

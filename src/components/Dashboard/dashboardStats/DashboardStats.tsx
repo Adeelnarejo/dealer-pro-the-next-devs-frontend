@@ -1,4 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  Activity,
+  ArrowUpRight,
+  CircleAlert,
+  CreditCard,
+  FileCheck2,
+  RefreshCw,
+  TrendingUp,
+  UsersRound,
+  CarFront,
+} from "lucide-react";
+
 import { makeGetRequest } from "../../../api/Api";
 import {
   UsersIcon,
@@ -21,8 +33,10 @@ interface StatCardProps {
   value: string | number;
   subtitle: string;
   icon: React.ReactNode;
-  color: string;
+  accent: string;
+  iconBackground: string;
   error?: boolean;
+  loading?: boolean;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -30,91 +44,179 @@ const StatCard: React.FC<StatCardProps> = ({
   value,
   subtitle,
   icon,
-  color,
+  accent,
+  iconBackground,
   error = false,
-}) => (
-  <div
-    className={`bg-white rounded-[20px] p-2 pl-4 dashboard-cards flex items-center ${
-      error ? "border border-red-200" : ""
-    }`}
-  >
-    <div className="w-full flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-[#5E636B] font-plus-jakarta mt-1">
-          {title}
-        </p>
-        {error ? (
-          <p className="text-red-500 text-sm mt-1">Failed to load</p>
-        ) : (
-          <div className="flex items-end gap-2 mb-1">
-            <p
-              className={`text-[32px] font-bold font-plus-jakarta text-[#000814] -mb-2`}
-            >
-              {value}
-            </p>
-            <p className="text-[12px] font-medium font-plus-jakarta text-[#012F7A]">
-              {subtitle}
-            </p>
+  loading = false,
+}) => {
+  if (loading) {
+    return (
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0B1628]">
+        <div className="animate-pulse">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="h-3 w-28 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="mt-4 h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700" />
+              <div className="mt-3 h-2.5 w-24 rounded bg-slate-100 dark:bg-slate-800" />
+            </div>
+
+            <div className="h-11 w-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
           </div>
-        )}
+
+          <div className="mt-5 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800" />
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div
+      className={`group relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg dark:bg-[#0B1628] ${
+        error
+          ? "border-red-200 dark:border-red-500/20"
+          : "border-slate-200 dark:border-slate-800"
+      }`}
+    >
+      {/* Top accent */}
       <div
-        className={`p-3 rounded-lg ${
-          error
-            ? "bg-red-50"
-            : color === "text-blue-600"
-            ? "bg-blue-50"
-            : color === "text-green-600"
-            ? "bg-green-50"
-            : color === "text-purple-600"
-            ? "bg-purple-50"
-            : "bg-gray-50"
-        }`}
-      >
-        {error ? <UsersIcon className="w-6 h-6 text-red-500" /> : icon}
+        className={`absolute left-0 top-0 h-[2px] w-full bg-gradient-to-r ${accent} opacity-70`}
+      />
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">
+              {title}
+            </p>
+
+            {!error && (
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                <Activity className="h-2.5 w-2.5" />
+              </span>
+            )}
+          </div>
+
+          {error ? (
+            <div className="mt-3 flex items-center gap-2">
+              <CircleAlert className="h-4 w-4 text-red-500 dark:text-red-400" />
+
+              <p className="text-sm font-semibold text-red-500 dark:text-red-400">
+                Failed to load
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="mt-3 flex items-end gap-2">
+                <p className="truncate text-[30px] font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-[32px]">
+                  {value}
+                </p>
+
+                {subtitle && (
+                  <p className="mb-1.5 truncate text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBackground} transition-transform duration-300 group-hover:scale-105`}
+        >
+          {error ? (
+            <CircleAlert className="h-5 w-5 text-red-500 dark:text-red-400" />
+          ) : (
+            icon
+          )}
+        </div>
       </div>
+
+      {!error && (
+        <div className="mt-5 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Live data
+            </span>
+          </div>
+
+          <ArrowUpRight className="h-3.5 w-3.5 text-slate-300 transition-colors group-hover:text-blue-500 dark:text-slate-600 dark:group-hover:text-blue-400" />
+        </div>
+      )}
+
+      {/* Bottom glow */}
+      <div className="pointer-events-none absolute -bottom-12 -right-12 h-24 w-24 rounded-full bg-blue-500/5 blur-2xl transition-opacity group-hover:opacity-100" />
     </div>
-  </div>
-);
+  );
+};
+
+interface DashboardStat {
+  title: string;
+  value: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  accent: string;
+  iconBackground: string;
+  loading: boolean;
+  error: boolean;
+  key: "payments" | "vehicles" | "revenue" | "agreements";
+}
 
 const DashboardStats = () => {
-  const [stats, setStats] = useState([
+  const [stats, setStats] = useState<DashboardStat[]>([
     {
-      title: "Total betalnings",
+      title: "Total Payments",
       value: "0",
       subtitle: "This Month",
-      color: "text-blue-600",
-      icon: <UsersIcon className="w-6 h-6 text-blue-600" />,
+      accent: "from-blue-500 to-cyan-400",
+      iconBackground:
+        "bg-blue-50 dark:bg-blue-500/10",
+      icon: (
+        <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+      ),
       loading: true,
       error: false,
       key: "payments",
     },
     {
-      title: "Totalt antal fordon",
+      title: "Total Vehicles",
       value: "0",
       subtitle: "0% Active",
-      color: "text-green-600",
-      icon: <VehiclesIcon className="w-6 h-6 text-green-600" />,
+      accent: "from-emerald-500 to-teal-400",
+      iconBackground:
+        "bg-emerald-50 dark:bg-emerald-500/10",
+      icon: (
+        <CarFront className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+      ),
       loading: true,
       error: false,
       key: "vehicles",
     },
     {
-      title: "Totala intäkter",
+      title: "Total Revenue",
       value: "0",
-      subtitle: "(kr) This Month",
-      color: "text-purple-600",
-      icon: <RevenueIcon className="w-6 h-6 text-purple-600" />,
+      subtitle: "This Month",
+      accent: "from-violet-500 to-purple-400",
+      iconBackground:
+        "bg-violet-50 dark:bg-violet-500/10",
+      icon: (
+        <TrendingUp className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+      ),
       loading: true,
       error: false,
       key: "revenue",
     },
     {
-      title: "Väntande avtal",
+      title: "Pending Agreements",
       value: "0",
       subtitle: "Awaiting Action",
-      color: "text-gray-600",
-      icon: <AgreementsIcon className="w-6 h-6 text-gray-600" />,
+      accent: "from-amber-500 to-orange-400",
+      iconBackground:
+        "bg-amber-50 dark:bg-amber-500/10",
+      icon: (
+        <FileCheck2 className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+      ),
       loading: true,
       error: false,
       key: "agreements",
@@ -122,41 +224,53 @@ const DashboardStats = () => {
   ]);
 
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const [overallError, setOverallError] = useState<string | null>(null);
-
-  console.log("overallError", overallError);
-
-  console.log("setOverallError", setOverallError);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchStats = async () => {
       try {
-        const [paymentsRes, vehiclesRes, paymentsForRevenueRes, agreementsRes] =
-          await Promise.allSettled([
-            makeGetRequest("payments/getAllPayments"),
-            makeGetRequest("vehicles/getAllVehicles"),
-            makeGetRequest("payments/getAllPayments"),
-            makeGetRequest("banksign/getallagreementstatus"),
-          ]);
+        const [
+          paymentsRes,
+          vehiclesRes,
+          paymentsForRevenueRes,
+          agreementsRes,
+        ] = await Promise.allSettled([
+          makeGetRequest("payments/getAllPayments"),
+          makeGetRequest("vehicles/getAllVehicles"),
+          makeGetRequest("payments/getAllPayments"),
+          makeGetRequest("banksign/getallagreementstatus"),
+        ]);
+
+        if (!mounted) return;
+
+        /* =====================================================
+           PAYMENTS
+        ===================================================== */
 
         if (
           paymentsRes.status === "fulfilled" &&
           paymentsRes.value.data?.success
         ) {
-          const payments: Payment[] = paymentsRes.value.data.data || [];
+          const payments: Payment[] =
+            paymentsRes.value.data.data || [];
+
           const totalPayments = payments.length;
+
           const currentMonth = new Date().getMonth();
           const currentYear = new Date().getFullYear();
-          const monthlyPayments = payments.filter((p) => {
-            const paymentDate = new Date(p.createdAt);
+
+          const monthlyPayments = payments.filter((payment) => {
+            const paymentDate = new Date(payment.createdAt);
+
             return (
               paymentDate.getMonth() === currentMonth &&
               paymentDate.getFullYear() === currentYear
             );
           }).length;
 
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "payments"
                 ? {
                     ...stat,
@@ -169,8 +283,8 @@ const DashboardStats = () => {
             )
           );
         } else {
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "payments"
                 ? {
                     ...stat,
@@ -182,22 +296,34 @@ const DashboardStats = () => {
           );
         }
 
+        /* =====================================================
+           VEHICLES
+        ===================================================== */
+
         if (
           vehiclesRes.status === "fulfilled" &&
           vehiclesRes.value.data?.success
         ) {
-          const vehicles: Vehicle[] = vehiclesRes.value.data.data;
+          const vehicles: Vehicle[] =
+            vehiclesRes.value.data.data || [];
+
           const totalVehicles = vehicles.length;
+
           const availableVehicles = vehicles.filter(
-            (v) => v.status === "Available"
+            (vehicle) =>
+              vehicle.status?.toLowerCase() === "available" ||
+              vehicle.status?.toLowerCase() === "in stock"
           ).length;
+
           const activePercentage =
             totalVehicles > 0
-              ? Math.round((availableVehicles / totalVehicles) * 100)
+              ? Math.round(
+                  (availableVehicles / totalVehicles) * 100
+                )
               : 0;
 
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "vehicles"
                 ? {
                     ...stat,
@@ -210,8 +336,8 @@ const DashboardStats = () => {
             )
           );
         } else {
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "vehicles"
                 ? {
                     ...stat,
@@ -223,30 +349,44 @@ const DashboardStats = () => {
           );
         }
 
+        /* =====================================================
+           REVENUE
+        ===================================================== */
+
         if (
           paymentsForRevenueRes.status === "fulfilled" &&
           paymentsForRevenueRes.value.data?.success
         ) {
-          const payments: Payment[] = paymentsForRevenueRes.value.data.data;
+          const payments: Payment[] =
+            paymentsForRevenueRes.value.data.data || [];
+
           const currentMonth = new Date().getMonth();
           const currentYear = new Date().getFullYear();
+
           const monthlyTotal = payments
-            .filter((p) => {
-              const paymentDate = new Date(p.createdAt);
+            .filter((payment) => {
+              const paymentDate = new Date(payment.createdAt);
+
               return (
                 paymentDate.getMonth() === currentMonth &&
                 paymentDate.getFullYear() === currentYear
               );
             })
-            .reduce((sum, p) => sum + p.total_amount, 0);
+            .reduce(
+              (sum, payment) =>
+                sum + Number(payment.total_amount || 0),
+              0
+            );
 
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "revenue"
                 ? {
                     ...stat,
-                    value: `${Math.round(monthlyTotal).toLocaleString()}`,
-                    subtitle: "(kr) This Month",
+                    value: Math.round(
+                      monthlyTotal
+                    ).toLocaleString(),
+                    subtitle: "This Month",
                     loading: false,
                     error: false,
                   }
@@ -254,8 +394,8 @@ const DashboardStats = () => {
             )
           );
         } else {
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "revenue"
                 ? {
                     ...stat,
@@ -266,14 +406,20 @@ const DashboardStats = () => {
             )
           );
         }
-        console.log("agreementsRes", agreementsRes);
 
-        if (agreementsRes.status === "fulfilled") {
+        /* =====================================================
+           AGREEMENTS
+        ===================================================== */
+
+        if (
+          agreementsRes.status === "fulfilled" &&
+          agreementsRes.value.data?.grouped?.pending
+        ) {
           const pendingAgreements =
             agreementsRes.value.data.grouped.pending.length;
 
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "agreements"
                 ? {
                     ...stat,
@@ -285,8 +431,8 @@ const DashboardStats = () => {
             )
           );
         } else {
-          setStats((prev) =>
-            prev.map((stat) =>
+          setStats((previous) =>
+            previous.map((stat) =>
               stat.key === "agreements"
                 ? {
                     ...stat,
@@ -297,45 +443,104 @@ const DashboardStats = () => {
             )
           );
         }
-      } catch (err) {
-        console.error("Error in dashboard stats:", err);
+      } catch (error) {
+        console.error("Error in dashboard stats:", error);
+
+        if (!mounted) return;
+
+        setStats((previous) =>
+          previous.map((stat) => ({
+            ...stat,
+            loading: false,
+            error: true,
+          }))
+        );
       } finally {
-        setIsInitialLoading(false);
+        if (mounted) {
+          setIsInitialLoading(false);
+        }
       }
     };
 
     fetchStats();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  /* ===========================================================
+     INITIAL LOADING
+  =========================================================== */
 
   if (isInitialLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-[20px] p-6 dashboard-cards animate-pulse"
-          >
-            <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[1, 2, 3, 4].map((item) => (
+          <StatCard
+            key={item}
+            title=""
+            value=""
+            subtitle=""
+            icon={null}
+            accent="from-blue-500 to-cyan-400"
+            iconBackground="bg-slate-100 dark:bg-slate-800"
+            loading
+          />
         ))}
       </div>
     );
   }
 
+  /* ===========================================================
+     MAIN
+  =========================================================== */
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-      {stats.map((stat, index) => (
-        <StatCard
-          key={index}
-          title={stat.title}
-          value={stat.error ? "-" : stat.value}
-          subtitle={stat.error ? "" : stat.subtitle}
-          icon={stat.icon}
-          color={stat.color}
-          error={stat.error}
-        />
-      ))}
+    <div className="mb-8 font-plus-jakarta">
+      {/* Small section header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+            <UsersRound className="h-3.5 w-3.5" />
+          </div>
+
+          <div>
+            <p className="text-xs font-bold text-slate-800 dark:text-white">
+              Business Overview
+            </p>
+
+            <p className="hidden text-[9px] text-slate-400 dark:text-slate-500 sm:block">
+              Real-time dealership performance
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+
+          <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+            Live
+          </span>
+        </div>
+      </div>
+
+      {/* Stat cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.key}
+            title={stat.title}
+            value={stat.error ? "-" : stat.value}
+            subtitle={stat.error ? "" : stat.subtitle}
+            icon={stat.icon}
+            accent={stat.accent}
+            iconBackground={stat.iconBackground}
+            error={stat.error}
+            loading={stat.loading}
+          />
+        ))}
+      </div>
     </div>
   );
 };

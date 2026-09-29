@@ -1,0 +1,525 @@
+/* =========================================================
+   DEALERPRO GLOBAL THEME
+========================================================= */
+
+html {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+body {
+  margin: 0;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* =========================================================
+   LIGHT MODE
+========================================================= */
+
+html:not(.dark) {
+  background-color: #f5f7fa;
+  color-scheme: light;
+}
+
+html:not(.dark) body {
+  background: #f5f7fa;
+  color: #0f172a;
+}
+
+/* =========================================================
+   DARK MODE BASE
+========================================================= */
+
+html.dark {
+  background: #06111f;
+  color: #e5edf7;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: #06111f !important;
+  color: #e5edf7 !important;
+}
+
+/* =========================================================
+   MAIN APP BACKGROUNDS
+========================================================= */
+
+html.dark .bg-\[\#F5F7FA\],
+html.dark .bg-\[\#f5f7fa\] {
+  background-color: #06111f !important;
+}
+
+html.dark .bg-\[\#F8FAFC\],
+html.dark .bg-\[\#f8fafc\],
+html.dark .bg-\[\#F3F7FC\],
+html.dark .bg-\[\#f3f7fc\],
+html.dark .bg-\[\#F3F6FA\],
+html.dark .bg-\[\#f3f6fa\],
+html.dark .bg-\[\#F7F9FC\],
+html.dark .bg-\[\#f7f9fc\] {
+  background-color: #091728 !important;
+}
+
+/* =========================================================
+   WHITE BACKGROUNDS
+========================================================= */
+
+html.dark .bg-white {
+  background-color: #0c1b2e !important;
+}
+
+html.dark .hover\:bg-white:hover {
+  background-color: #13263d !important;
+}
+
+/* =========================================================
+   GRAY / SLATE BACKGROUNDS
+========================================================= */
+
+html.dark .bg-gray-50,
+html.dark .bg-slate-50 {
+  background-color: #091728 !important;
+}
+
+html.dark .bg-gray-100,
+html.dark .bg-slate-100 {
+  background-color: #0f2035 !important;
+}
+
+html.dark .bg-gray-200,
+html.dark .bg-slate-200 {
+  background-color: #172b44 !important;
+}
+
+html.dark .bg-gray-300,
+html.dark .bg-slate-300 {
+  background-color: #203750 !important;
+}
+
+/* =========================================================
+   BLUE LIGHT BACKGROUNDS
+========================================================= */
+
+html.dark .bg-blue-50 {
+  background-color: #0b2542 !important;
+}
+
+html.dark .bg-blue-100 {
+  background-color: #103252 !important;
+}
+
+html.dark .bg-indigo-50 {
+  background-color: #101f3d !important;
+}
+
+html.dark .bg-green-50 {
+  background-color: #0b2a22 !important;
+}
+
+html.dark .bg-red-50 {
+  background-color: #32151b !important;
+}
+
+html.dark .bg-yellow-50 {
+  background-color: #302712 !important;
+}
+
+/* =========================================================
+   HOVER BACKGROUNDS
+========================================================= */
+
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #13263d !important;
+}
+
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #172b44 !important;
+}
+
+html.dark .hover\:bg-blue-50:hover {
+  background-color: #103252 !important;
+}
+
+html.dark .hover\:bg-red-50:hover {
+  background-color: #431b23 !important;
+}
+
+/* =========================================================
+   TEXT
+========================================================= */
+
+html.dark .text-black,
+html.dark .text-gray-950,
+html.dark .text-gray-900,
+html.dark .text-slate-950,
+html.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+html.dark .text-gray-800,
+html.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-gray-600,
+html.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-gray-400,
+html.dark .text-slate-400 {
+  color: #64748b !important;
+}
+
+html.dark .text-gray-300,
+html.dark .text-slate-300 {
+  color: #94a3b8 !important;
+}
+
+/* =========================================================
+   BLUE TEXT
+========================================================= */
+
+html.dark .text-blue-900,
+html.dark .text-blue-800,
+html.dark .text-blue-700 {
+  color: #bfdbfe !important;
+}
+
+html.dark .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+html.dark .text-blue-500 {
+  color: #60a5fa !important;
+}
+
+/* =========================================================
+   GREEN TEXT
+========================================================= */
+
+html.dark .text-green-900,
+html.dark .text-green-800,
+html.dark .text-green-700 {
+  color: #bbf7d0 !important;
+}
+
+html.dark .text-green-600 {
+  color: #4ade80 !important;
+}
+
+/* =========================================================
+   RED TEXT
+========================================================= */
+
+html.dark .text-red-900,
+html.dark .text-red-800,
+html.dark .text-red-700 {
+  color: #fecaca !important;
+}
+
+html.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+/* =========================================================
+   BORDERS
+========================================================= */
+
+html.dark .border-gray-100,
+html.dark .border-slate-100 {
+  border-color: rgba(148, 163, 184, 0.10) !important;
+}
+
+html.dark .border-gray-200,
+html.dark .border-slate-200 {
+  border-color: rgba(148, 163, 184, 0.15) !important;
+}
+
+html.dark .border-gray-300,
+html.dark .border-slate-300 {
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+html.dark .border-gray-400,
+html.dark .border-slate-400 {
+  border-color: rgba(148, 163, 184, 0.30) !important;
+}
+
+/* =========================================================
+   BLUE BORDERS
+========================================================= */
+
+html.dark .border-blue-100 {
+  border-color: rgba(96, 165, 250, 0.18) !important;
+}
+
+html.dark .border-blue-200 {
+  border-color: rgba(96, 165, 250, 0.25) !important;
+}
+
+/* =========================================================
+   RED BORDERS
+========================================================= */
+
+html.dark .border-red-100 {
+  border-color: rgba(248, 113, 113, 0.18) !important;
+}
+
+html.dark .border-red-200 {
+  border-color: rgba(248, 113, 113, 0.25) !important;
+}
+
+/* =========================================================
+   INPUTS / TEXTAREAS / SELECTS
+========================================================= */
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #0c1b2e !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(148, 163, 184, 0.20) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: #3b82f6 !important;
+}
+
+/* =========================================================
+   DISABLED INPUTS
+========================================================= */
+
+html.dark input:disabled,
+html.dark textarea:disabled,
+html.dark select:disabled {
+  background-color: #091728 !important;
+  color: #64748b !important;
+  opacity: 0.75;
+}
+
+/* =========================================================
+   OPTIONS
+========================================================= */
+
+html.dark option {
+  background-color: #0c1b2e;
+  color: #f1f5f9;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+html.dark header {
+  background-color: rgba(6, 17, 31, 0.94) !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+}
+
+/* =========================================================
+   CARDS / SHADOWS
+========================================================= */
+
+html.dark .shadow,
+html.dark .shadow-sm,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.28) !important;
+}
+
+/* =========================================================
+   DIVIDERS
+========================================================= */
+
+html.dark hr {
+  border-color: rgba(148, 163, 184, 0.12) !important;
+}
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+html.dark table {
+  color: #e2e8f0;
+}
+
+html.dark thead {
+  background-color: #091728 !important;
+}
+
+html.dark tbody tr {
+  border-color: rgba(148, 163, 184, 0.12) !important;
+}
+
+html.dark tbody tr:hover {
+  background-color: #0f2035 !important;
+}
+
+/* =========================================================
+   LINKS
+========================================================= */
+
+html.dark a {
+  color: inherit;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+html.dark {
+  scrollbar-color: #263b55 #06111f;
+}
+
+html.dark::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark::-webkit-scrollbar-track {
+  background: #06111f;
+}
+
+html.dark::-webkit-scrollbar-thumb {
+  background: #263b55;
+  border-radius: 999px;
+}
+
+html.dark::-webkit-scrollbar-thumb:hover {
+  background: #38516f;
+}
+
+/* =========================================================
+   THEME TOGGLE
+========================================================= */
+
+.theme-toggle-wrapper {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 99999;
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.15);
+  cursor: pointer;
+}
+
+.theme-track {
+  position: relative;
+  width: 48px;
+  height: 26px;
+  border-radius: 999px;
+  background: #e5edf7;
+}
+
+.theme-icon {
+  position: absolute;
+  top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.sun-icon {
+  left: 6px;
+}
+
+.moon-icon {
+  right: 6px;
+}
+
+.theme-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: white;
+  color: #2563eb;
+  box-shadow:
+    0 2px 7px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.dark-active .theme-track {
+  background: #1e3048;
+}
+
+.dark-active .theme-knob {
+  transform: translateX(22px);
+  background: #16263c;
+  color: #93c5fd;
+}
+
+.theme-text {
+  min-width: 30px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* =========================================================
+   TOGGLE DARK STATE
+========================================================= */
+
+html.dark .theme-toggle {
+  background: rgba(13, 27, 45, 0.97);
+  border-color: rgba(71, 93, 120, 0.5);
+}
+
+html.dark .theme-text {
+  color: #cbd5e1;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 767px) {
+  .theme-toggle-wrapper {
+    top: 74px;
+    right: 12px;
+    bottom: auto;
+  }
+}

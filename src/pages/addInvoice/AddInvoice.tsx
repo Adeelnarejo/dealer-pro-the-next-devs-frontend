@@ -607,31 +607,31 @@ const AddInvoice = () => {
               </div>
             </div>
 
-            <p className="text-sm text-black font-medium mb-2">Kvitto nummer</p>
+            <p className="text-sm text-black font-medium mb-2">Invoice Number</p>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="mb-4 border border-gray-300 rounded-md min-h-24 p-2 py-1">
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between">
-                    <h2 className="font-medium text-[12px]">Namn</h2>
+                    <h2 className="font-medium text-[12px]">Name</h2>
                     <p className="font-normal text-[12px]">
                       {form.customerName || "-"}
                     </p>
                   </div>
                   <div className="flex justify-between">
-                    <h2 className="font-medium text-[12px]">Organisation</h2>
+                    <h2 className="font-medium text-[12px]">Organization</h2>
                     <p className="font-normal text-[12px]">
                       {form.orgNumber || "-"}
                     </p>
                   </div>
                   <div className="flex justify-between">
-                    <h2 className="font-medium text-[12px]">Telefonnummer</h2>
+                    <h2 className="font-medium text-[12px]">Phone Number</h2>
                     <p className="font-normal text-[12px]">
                       {form.telephone || "-"}
                     </p>
                   </div>
                   <div className="flex justify-between">
-                    <h2 className="font-medium text-[12px]">Mail</h2>
+                    <h2 className="font-medium text-[12px]">Email</h2>
                     <p className="font-normal text-[12px]">
                       {form.email || "-"}
                     </p>
@@ -670,35 +670,35 @@ const AddInvoice = () => {
 
             </div>
 
-            <div className="mb-2 border border-gray-300 rounded-md max-h-[45vh] min-h-[45vh] flex flex-col justify-between p-2 py-1">
+            <div className="mb-2 flex max-h-[45vh] min-h-[360px] flex-col justify-between rounded-xl border border-slate-200 p-2 py-1 dark:border-slate-800 sm:min-h-[420px]">
               <div>
                 <div className="text-white py-2 text-sm grid grid-cols-4">
                   <span className="text-blue-500 font-medium text-[16px] px-2">
-                    Produkt / tjänst
+                    Product / Service
                   </span>
                   <span className="text-blue-500 font-medium text-[16px] px-2">
-                    À-pris
+                    Unit Price
                   </span>
                   <span className="text-blue-500 font-medium text-[16px] px-2">
                     Moms
                   </span>
                   <span className="text-blue-500 font-medium text-[16px] px-2">
-                    Belopp
+                    Amount
                   </span>
                 </div>
 
                 {productLines.map((line, idx) => (
-                  <div key={idx} className="grid grid-cols-4">
-                    <span className="p-2 border-b border-gray-100">
+                  <div key={idx} className="grid min-w-[620px] grid-cols-4">
+                    <span className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                       {line.productName || "-"}
                     </span>
-                    <span className="p-2 border-b border-gray-100">
+                    <span className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                       {line.price}
                     </span>
-                    <span className="p-2 border-b border-gray-100">
+                    <span className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                       {line.vatRate}
                     </span>
-                    <span className="p-2 border-b border-gray-100">
+                    <span className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                       {line.lineTotal}
                     </span>
                   </div>
@@ -711,9 +711,9 @@ const AddInvoice = () => {
                     <div className="text-left">
                       <p className="font-medium">Netto:</p>
                       <p className="text-sm text-gray-500">
-                        Moms %(beräknad på {net.toFixed(2)} kr)
+                        VAT (calculated on {net.toFixed(2)} kr)
                       </p>
-                      <p className="text-sm text-gray-500">Öresutjämning:</p>
+                      <p className="text-sm text-gray-500">Rounding:</p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">{net.toFixed(2)} kr</p>
@@ -727,7 +727,7 @@ const AddInvoice = () => {
 
                 <div className="text-end border-t border-gray-300 py-3">
                   <p className="text-xl font-bold">
-                    Summa att betala: {total.toFixed(2)} kr
+                    Amount Due: {total.toFixed(2)} kr
                   </p>
                 </div>
               </div>
@@ -735,7 +735,7 @@ const AddInvoice = () => {
 
             <div className="min-h-28 border border-gray-300 rounded-md px-2 py-3">
               <h3 className="text-sm font-semibold">Company information</h3>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="flex flex-col">
                   <div className="grid grid-cols-2 gap-0.5 mb-2">
                     <p className="w-20 text-xs">Address: </p>
@@ -771,47 +771,57 @@ const AddInvoice = () => {
                   </div>
                 </div>
               </div>
-              {/* <h3 className="text-sm font-semibold">Företagets e-post</h3> */}
+              {/* <h3 className="text-sm font-semibold">Businessets e-post</h3> */}
             </div>
           </div>
         </div>
       ) : (
-        <div className="lg:p-8 p-4 font-plus-jakarta bg-[#F6F8FA] min-h-screen">
-          <div className="flex items-center mb-8">
-            <button
-              className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer"
+        <div className="min-h-screen w-full bg-[#F5F7FA] px-3 py-4 font-plus-jakarta transition-colors duration-300 dark:bg-[#07111F] sm:px-5 sm:py-5 lg:px-7 lg:py-7">
+          <div className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <button
+              className="flex w-fit items-center rounded-xl px-2 py-2 text-sm font-semibold text-slate-600 transition hover:bg-white hover:text-[#002147] dark:text-slate-300 dark:hover:bg-[#0D1D31] dark:hover:text-white"
               onClick={() => navigate(-1)}
             >
               <BackArrowIcon />
-              <span className="ml-2 text-lg font-medium">Skapa faktura</span>
-            </button>
+              <span className="ml-2 text-base font-bold sm:text-lg">Create Invoice</span>
+              </button>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
+                  DealerPro
+                </p>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
+                  Create Invoice
+                </h1>
+              </div>
+            </div>
             <button
-              className="ml-auto bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white px-6 py-2 rounded-lg hover:bg-blue-800 cursor-pointer shadow-sm"
+              className="w-full rounded-xl bg-gradient-to-r from-[#002147] to-[#0759A8] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/10 transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-7"
               onClick={handleSubmit}
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Sparande..." : "Spara faktura"}
+              {isSubmitting ? "Saving..." : "Save Invoice"}
             </button>
           </div>
 
           {Object.keys(error).length > 0 && (
-            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+            <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
               {Object.values(error).map((err, idx) => (
                 <p key={idx}>{err}</p>
               ))}
             </div>
           )}
-          <div className="grid lg:grid-cols-2 grid-cols-1 gap-8">
-            <div className="bg-white rounded-2xl shadow p-6 flex flex-col gap-8 border border-gray-100">
-              <div className="bg-[#F0F7FF] rounded-lg p-4 mb-2 border-b border-blue-100">
-                <h2 className="text-blue-900 font-semibold mb-2 text-base">
-                  Kundinformation
+          <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-2 xl:gap-6">
+            <div className="flex min-w-0 flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors duration-300 dark:border-slate-800 dark:bg-[#0B1728] sm:gap-6 sm:p-5 lg:p-6">
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-500/10 dark:bg-blue-500/5 sm:p-5">
+                <h2 className="mb-4 text-base font-bold text-[#002147] dark:text-white">
+                  Customer Information
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {form.customerType === "Individual" && (
                     <div className="col-span-2">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Personnummer
+                      <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                        Social Security Number
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -823,42 +833,42 @@ const AddInvoice = () => {
                             setOrgOrSsn(e.target.value);
                             handleFormChange(e);
                           }}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                         />
                         <button
-                          className="rounded-lg bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white px-4 py-2 cursor-pointer"
+                          className="shrink-0 rounded-xl bg-gradient-to-r from-[#002147] to-[#0759A8] px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5"
                           type="button"
                           onClick={handleOrgOrPersonSearch}
                         >
-                          Söka
+                          Search
                         </button>
                       </div>
                       {searchError && (
-                        <div className="text-red-600 text-sm mt-1">
+                        <div className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
                           {searchError}
                         </div>
                       )}
                     </div>
                   )}
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Kundtyp
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Customer Type
                     </label>
                     <select
                       name="customerType"
                       value={form.customerType}
                       onChange={handleFormChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     >
-                      <option value="Business">Företag</option>
-                      <option value="Individual">Enskild</option>
+                      <option value="Business">Business</option>
+                      <option value="Individual">Individual</option>
                     </select>
 
                   </div>
                   {form.customerType === "Business" && (
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Organisationsnummer
+                      <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                        Organization Number
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -870,18 +880,18 @@ const AddInvoice = () => {
                             setOrgOrSsn(e.target.value);
                             handleFormChange(e);
                           }}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                         />
                         <button
-                          className="rounded-lg bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white px-4 py-2 cursor-pointer"
+                          className="shrink-0 rounded-xl bg-gradient-to-r from-[#002147] to-[#0759A8] px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5"
                           type="button"
                           onClick={handleOrgOrPersonSearch}
                         >
-                          Söka
+                          Search
                         </button>
                       </div>
                       {searchError && (
-                        <div className="text-red-600 text-sm mt-1">
+                        <div className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400">
                           {searchError}
                         </div>
                       )}
@@ -889,34 +899,34 @@ const AddInvoice = () => {
                   )}
 
                   <div className="col-span-2">
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Kundens namn
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Customer Name
                     </label>
                     <input
                       type="text"
                       name="customerName"
                       value={form.customerName}
                       onChange={handleFormChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                       placeholder="Enter customer name..."
                     />
                   </div>
 
 
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Fakturadatum
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Invoice Date
                     </label>
                     <input
                       type="date"
                       name="invoiceDate"
                       value={form.invoiceDate}
                       onChange={handleFormChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
                       Due Date
                     </label>
                     <input
@@ -924,12 +934,12 @@ const AddInvoice = () => {
                       name="dueDate"
                       value={form.dueDate}
                       onChange={handleFormChange}
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      I referens
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Client Reference
                     </label>
                     <input
                       type="text"
@@ -937,12 +947,12 @@ const AddInvoice = () => {
                       value={form.inReference}
                       onChange={handleFormChange}
                       placeholder="Client reference..."
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Vår referens
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Our Reference
                     </label>
                     <input
                       type="text"
@@ -950,12 +960,12 @@ const AddInvoice = () => {
                       value={form.ourReference}
                       onChange={handleFormChange}
                       placeholder="Our reference..."
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      E-postadress
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Email Address
                     </label>
                     <input
                       type="email"
@@ -963,12 +973,12 @@ const AddInvoice = () => {
                       value={form.email}
                       onChange={handleFormChange}
                       placeholder="Enter email address..."
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Telefonnummer
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-300 sm:text-sm">
+                      Phone Number
                     </label>
                     <input
                       type="tel"
@@ -976,33 +986,33 @@ const AddInvoice = () => {
                       value={form.telephone}
                       onChange={handleFormChange}
                       placeholder="Enter telephone number..."
-                      className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#0E1C2D] dark:text-white dark:placeholder:text-slate-500"
                     />
                   </div>
                 </div>
               </div>
-              <div className="bg-[#F8FAFC] rounded-lg p-4 border border-gray-100">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-[#0D1D31] sm:p-5">
                 <h2 className="text-blue-900 font-semibold mb-4 text-base">
-                  Belopp
+                  Amount
                 </h2>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm mb-2 border-separate border-spacing-0">
+                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="min-w-[720px] text-sm border-separate border-spacing-0">
                     <thead>
-                      <tr className="bg-[#F0F7FF] border-b border-blue-100">
-                        <th className="p-2 text-start font-medium border-b border-blue-100">
-                          Produkt/tjänst
+                      <tr className="bg-blue-50 dark:bg-[#10253D]">
+                        <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                          Product / Service
                         </th>
-                        <th className="p-2 text-start font-medium border-b whitespace-nowrap border-blue-100">
-                          Pris ({form.currency})
+                        <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                          Price ({form.currency})
                         </th>
-                        <th className="p-2 text-start font-medium border-b border-blue-100 whitespace-nowrap">
+                        <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
                           MOMS (%)
                         </th>
-                        <th className="p-2 text-start font-medium border-b border-blue-100 whitespace-nowrap">
-                          Belopp
+                        <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                          Amount
                         </th>
-                        <th className="p-2 text-start font-medium border-b border-blue-100 whitespace-nowrap">
-                          Handling
+                        <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                          Action
                         </th>
                       </tr>
                     </thead>
@@ -1010,17 +1020,15 @@ const AddInvoice = () => {
                       {productLines.map((line, idx) => (
                         <tr
                           key={idx}
-                          className={
-                            idx % 2 === 0 ? "bg-white" : "bg-[#F6F8FA]"
-                          }
+                          className={idx % 2 === 0 ? "bg-white dark:bg-[#0B1728]" : "bg-slate-50 dark:bg-[#0E1C2D]"}
                         >
-                          <td className="p-2 border-b border-gray-100">
+                          <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                             {/* <input
                           type="text"
                           name="productName"
                           value={line.productName}
                           onChange={(e) => handleProductLineChange(idx, e)}
-                          className="w-full border border-gray-300 rounded-lg p-1"
+                          className="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#101F33] dark:text-white"
                           placeholder="Product name"
                         /> */}
                             <input
@@ -1028,17 +1036,17 @@ const AddInvoice = () => {
                               name="productName"
                               value={line.productName}
                               onChange={(e) => handleProductLineChange(idx, e)}
-                              className="w-full border border-gray-300 rounded-lg p-1 mt-1"
+                              className="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#101F33] dark:text-white"
                               placeholder="Description"
                             />
                           </td>
-                          <td className="p-2 border-b border-gray-100">
+                          <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                             <input
                               type="number"
                               name="price"
                               value={line.price}
                               onChange={(e) => handleProductLineChange(idx, e)}
-                              className="w-full border border-gray-300 rounded-lg p-1"
+                              className="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#101F33] dark:text-white"
                               min="0"
                               step="0.01"
                             />
@@ -1048,7 +1056,7 @@ const AddInvoice = () => {
                               name="vatRate"
                               value={line.vatRate}
                               onChange={(e) => handleProductLineChange(idx, e)}
-                              className="w-full border border-gray-300 rounded-lg p-1"
+                              className="w-full rounded-lg border border-slate-200 bg-white p-2 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-[#101F33] dark:text-white"
                             >
                               <option value="25">25%</option>
                               <option value="12">12%</option>
@@ -1056,10 +1064,10 @@ const AddInvoice = () => {
                               <option value="0">0%</option>
                             </select>
                           </td>
-                          <td className="p-2 border-b border-gray-100">
+                          <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                             {line.lineTotal?.toFixed(2) || "0.00"}
                           </td>
-                          <td className="p-2 border-b border-gray-100">
+                          <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                             <button
                               type="button"
                               onClick={() => removeProductLine(idx)}
@@ -1078,27 +1086,27 @@ const AddInvoice = () => {
                   <button
                     type="button"
                     onClick={addProductLine}
-                    className="text-blue-700 flex items-center gap-1 mt-2 cursor-pointer border border-blue-100 bg-white px-4 py-1 rounded-lg shadow-sm hover:bg-blue-50"
+                    className="mt-3 flex items-center gap-1 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#002147] shadow-sm transition hover:bg-blue-50 dark:border-slate-700 dark:bg-[#101F33] dark:text-blue-300 dark:hover:bg-[#162943]"
                   >
-                    <span>+</span> Lägg till ny produktlinje
+                    <span>+</span> Add Product Line
                   </button>
                 </div>
-                <div className="mt-6 text-right flex flex-col gap-3">
-                  <div className="flex justify-between px-2 py-1 border-b border-gray-100">
-                    <span className="text-gray-700">Netto:</span>{" "}
+                <div className="mt-5 flex flex-col gap-2.5 text-right">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-2 py-2 dark:border-slate-800">
+                    <span className="text-slate-600 dark:text-slate-300">Netto:</span>{" "}
                     <span className="font-semibold">
                       {net.toFixed(2)} {form.currency}
                     </span>
                   </div>
-                  <div className="flex justify-between px-2 py-1 border-b border-gray-100">
-                    <span className="text-gray-700">MOMS:</span>{" "}
+                  <div className="flex items-center justify-between border-b border-slate-100 px-2 py-2 dark:border-slate-800">
+                    <span className="text-slate-600 dark:text-slate-300">MOMS:</span>{" "}
                     <span className="font-semibold">
                       {moms.toFixed(2)} {form.currency}
                     </span>
                   </div>
-                  <div className="flex justify-between px-2 py-2 bg-[#F0F7FF] rounded-lg mt-2">
-                    <span className="font-semibold">Totalt belopp:</span>{" "}
-                    <span className="font-bold text-blue-900">
+                  <div className="mt-2 flex items-center justify-between rounded-xl bg-blue-50 px-3 py-3 dark:bg-blue-500/10">
+                    <span className="font-semibold">Total Amount:</span>{" "}
+                    <span className="font-bold text-[#002147] dark:text-blue-300">
                       {total.toFixed(2)} {form.currency}
                     </span>
                   </div>
@@ -1106,64 +1114,64 @@ const AddInvoice = () => {
               </div>
             </div>
             <div
-              className="bg-white rounded-2xl shadow p-6 border border-gray-100 flex flex-col gap-8 printable-area"
+              className="printable-area flex min-w-0 flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors duration-300 dark:border-slate-800 dark:bg-[#0B1728] sm:p-5 lg:p-6"
               ref={receiptRef}
             >
-              <div className="rounded-lg py-4 mb-2 border-b border-blue-100 flex items-center justify-between">
-                <h2 className="text-[15px] text-gray-700 font-semibold">
-                  Faktura{" "}
+              <div className="mb-2 flex items-center justify-between rounded-xl border-b border-slate-100 py-4 dark:border-slate-800">
+                <h2 className="text-sm font-bold text-slate-800 dark:text-white sm:text-[15px]">
+                  Invoice{" "}
                   <span className="text-gray-400 text-sm font-normal">
-                    (Förhandsgranska i realtid)
+                    (Live Preview)
                   </span>
                 </h2>
                 <button
-                  className="text-[#012F7A] hover:text-blue-700 cursor-pointer"
+                  className="rounded-lg p-2 text-[#012F7A] transition hover:bg-blue-50 hover:text-blue-700 dark:text-blue-300 dark:hover:bg-blue-500/10"
                   onClick={handlePrint}
                 >
                   <InvoicePreviewIcon />
                 </button>
               </div>
               <div className="mb-6">
-                <h3 className="text-[18px] font-semibold text-gray-900 mb-3">
-                  Faktura
+                <h3 className="mb-3 text-base font-bold text-slate-900 dark:text-white sm:text-lg">
+                  Invoice
                 </h3>
-                <div className="grid md:grid-cols-2 grid-cols-1 gap-y-3">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Fakturanummer
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Invoicenummer
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {generateTempInvoiceNumber()}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Kundtyp
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Customer Type
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.customerType || "N/A"}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="mb-6">
-                <h3 className="text-[18px] font-semibold text-gray-900 mb-3">
-                  Fakturamottagare
+                <h3 className="mb-3 text-base font-bold text-slate-900 dark:text-white sm:text-lg">
+                  Invoicemottagare
                 </h3>
-                <div className="grid md:grid-cols-2 grid-cols-1 gap-y-3">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Kundens namn
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Customer Name
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.customerName || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       {form.customerType === "Business" ? "Org. Nr" : "SSN"}
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.customerType === "Business"
                         ? previewData.orgNumber || form.orgNumber || "N/A"
                         : previewData.socialSecurityNumber ||
@@ -1173,50 +1181,50 @@ const AddInvoice = () => {
 
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       E-post
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.email || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Telefonnummer
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Phone Number
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.telephone || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      I referens
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Client Reference
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.inReference || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Adress
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {previewData.address || form.address || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Postnummer
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {previewData.postalCode || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Stad
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {previewData.city || "N/A"}
                     </div>
 
@@ -1224,62 +1232,62 @@ const AddInvoice = () => {
                 </div>
               </div>
               <div className="mb-6">
-                <h3 className="text-[18px] font-semibold text-gray-900 mb-3">
-                  Fakturainformation
+                <h3 className="mb-3 text-base font-bold text-slate-900 dark:text-white sm:text-lg">
+                  Invoiceinformation
                 </h3>
-                <div className="grid md:grid-cols-2 grid-cols-1 gap-y-3">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Fakturadatum
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Invoice Date
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.invoiceDate || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Utgångsdatum
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Due Date
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.dueDate || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Vår referens
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Our Reference
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {form.ourReference || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[14px] font-medium text-[#91959A]">
-                      Valuta
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Currency
                     </div>
-                    <div className="text-[16px] font-normal text-[#2E343E]">
+                    <div className="mt-0.5 break-words text-sm font-medium text-slate-800 dark:text-slate-200 sm:text-[15px]">
                       {company ? (company.currency || "N/A") : "N/A"}
                     </div>
                   </div>
                 </div>
               </div>
               <div className="mb-6">
-                <h3 className="text-[18px] font-semibold text-gray-900 mb-3">
-                  Beskrivning
+                <h3 className="mb-3 text-base font-bold text-slate-900 dark:text-white sm:text-lg">
+                  Description
                 </h3>
-                <table className="min-w-full text-sm mb-2 border-separate border-spacing-0">
+                <table className="min-w-[720px] text-sm border-separate border-spacing-0">
                   <thead>
-                    <tr className="bg-[#F0F7FF] border-b border-blue-100">
-                      <th className="p-2 text-start font-medium border-b border-blue-100">
-                        Beskrivning
+                    <tr className="bg-blue-50 dark:bg-[#10253D]">
+                      <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                        Description
                       </th>
-                      <th className="p-2 text-start font-medium border-b border-blue-100">
-                        Pris
+                      <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                        Price
                       </th>
-                      <th className="p-2 text-start font-medium border-b border-blue-100">
+                      <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
                         Moms
                       </th>
-                      <th className="p-2 text-start font-medium border-b border-blue-100">
-                        Belopp
+                      <th className="whitespace-nowrap border-b border-blue-100 p-3 text-start text-xs font-bold text-[#002147] dark:border-slate-700 dark:text-blue-300">
+                        Amount
                       </th>
                     </tr>
                   </thead>
@@ -1289,16 +1297,16 @@ const AddInvoice = () => {
                         key={idx}
                         className={idx % 2 === 0 ? "bg-white" : "bg-[#F6F8FA]"}
                       >
-                        <td className="p-2 border-b border-gray-100">
+                        <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                           {line.productName || "-"}
                         </td>
-                        <td className="p-2 border-b border-gray-100">
+                        <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                           {line.price}
                         </td>
-                        <td className="p-2 border-b border-gray-100">
+                        <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                           {line.vatRate}
                         </td>
-                        <td className="p-2 border-b border-gray-100">
+                        <td className="border-b border-slate-100 p-2.5 dark:border-slate-800">
                           {line.lineTotal}
                         </td>
                       </tr>
@@ -1307,22 +1315,22 @@ const AddInvoice = () => {
                 </table>
               </div>
               <div className="mb-2 text-right flex flex-col gap-3">
-                <div className="flex justify-between px-2 py-1 border-b border-gray-100">
-                  <span className="text-gray-700">Totalt exkl. moms:</span>{" "}
+                <div className="flex items-center justify-between border-b border-slate-100 px-2 py-2 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-300">Subtotal:</span>{" "}
                   <span className="font-semibold">{net.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between px-2 py-1 border-b border-gray-100">
-                  <span className="text-gray-700">Moms:</span>{" "}
+                <div className="flex items-center justify-between border-b border-slate-100 px-2 py-2 dark:border-slate-800">
+                  <span className="text-slate-600 dark:text-slate-300">VAT:</span>{" "}
                   <span className="font-semibold">{moms.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between px-2 py-2 bg-[#F0F7FF] rounded-lg mt-2">
-                  <span className="font-semibold">Att betala:</span>{" "}
-                  <span className="font-bold text-blue-900">
+                <div className="mt-2 flex items-center justify-between rounded-xl bg-blue-50 px-3 py-3 dark:bg-blue-500/10">
+                  <span className="font-semibold">Amount Due:</span>{" "}
+                  <span className="font-bold text-[#002147] dark:text-blue-300">
                     {total.toFixed(2)} {form.currency}
                   </span>
                 </div>
               </div>
-              <div className="text-xs text-gray-400 mt-5 text-center">
+              <div className="mt-5 break-words text-center text-[11px] leading-5 text-slate-400 dark:text-slate-500">
                 {company?.company_name || "N/A"} • {company?.visiting_address || "N/A"}, {company?.city || "N/A"}, {company?.postalCode || "N/A"} • {company?.phoneNumber || "N/A"}
                 <br />
                 Bankgiro: {company?.iban_Bic || "N/A"} • Org.nr: {company?.registrationNumber || "N/A"} • VAT: {company?.vatNumber || "N/A"}

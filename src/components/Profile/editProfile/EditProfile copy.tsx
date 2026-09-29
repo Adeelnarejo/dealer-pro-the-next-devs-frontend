@@ -1,12 +1,45 @@
-import { useState, useEffect } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { useUserProfile } from "../../../utils/useUserProfile";
-import { makeGetRequest, makePutRequest } from "../../../api/Api";
-import { Loader2, Search } from "lucide-react";
+import {
+  makeGetRequest,
+  makePutRequest,
+} from "../../../api/Api";
+
+import {
+  Building2,
+  CalendarDays,
+  CreditCard,
+  FileSignature,
+  FileText,
+  Globe2,
+  KeyRound,
+  Landmark,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  ReceiptText,
+  Save,
+  Search,
+  UploadCloud,
+  UserRound,
+  X,
+} from "lucide-react";
+
 import toast from "react-hot-toast";
 import ChangePasswordModal from "../../models/ChangePasswordModal";
 import { BACKEND_API_ENDPOINT } from "../../../api/config";
+
 import Select from "react-select";
 
+/* =========================================================
+   TYPES
+========================================================= */
 
 export type SectionKey =
   | "company_information"
@@ -15,11 +48,54 @@ export type SectionKey =
   | "payment_settings"
   | "invoice_settings"
   | "contract_settings";
-// | "other_settings";
 
 interface EditProfileProps {
   onUpdateSuccess?: () => void;
   section: SectionKey;
+}
+
+interface FieldOption {
+  value: string;
+  label: string;
+}
+
+type FieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "date"
+  | "number"
+  | "textarea"
+  | "file"
+  | "checkbox"
+  | "select0";
+
+interface SectionField {
+  name: string;
+  label: string;
+  type: FieldType;
+  multiple?: boolean;
+  options?: FieldOption[];
+}
+
+interface OrgAddress {
+  _type: string;
+  kind: string;
+  country: string;
+  street: string;
+  number: string;
+  zip: string;
+  city: string;
+  county: string;
+  municipality: string;
+}
+
+interface OrgPhone {
+  _type: string;
+  number: string;
+  areaCode: string;
+  kind: string;
+  registeredSince: string;
 }
 
 interface OrgSearchResponse {
@@ -32,37 +108,8 @@ interface OrgSearchResponse {
     id: string;
     country: string;
     legalId: string;
-    addresses: [
-      {
-        _type: string;
-        kind: string;
-        country: string;
-        street: string;
-        number: string;
-        zip: string;
-        city: string;
-        county: string;
-        municipality: string;
-      },
-      {
-        _type: string;
-        kind: string;
-        country: string;
-        street: string;
-        number: string;
-        zip: string;
-        city: string;
-        county: string;
-        municipality: string;
-      }
-    ];
-    phones: {
-      _type: string;
-      number: string;
-      areaCode: string;
-      kind: string;
-      registeredSince: string;
-    }[];
+    addresses: OrgAddress[];
+    phones: OrgPhone[];
     orgName: {
       name: string;
       rawName: string;
@@ -91,189 +138,592 @@ interface OrgSearchResponse {
   }[];
 }
 
-const sectionTitles = {
-  company_information: "Företagsinformation",
-  // address_details: "Address Details",
-  contact_information: "Kontaktinformation",
-  payment_settings: "Betalningsinställningar",
-  invoice_settings: "Fakturainställningar",
-  contract_settings: "Avtalsinställningar",
-  // other_settings: "Other Settings",
+/* =========================================================
+   SECTION TITLES
+========================================================= */
+
+const sectionTitles: Record<
+  SectionKey,
+  string
+> = {
+  company_information: "Company Information",
+  address_details: "Address Details",
+  contact_information: "Contact Information",
+  payment_settings: "Payment Settings",
+  invoice_settings: "Invoice Settings",
+  contract_settings: "Contract Settings",
 };
 
-const sectionFields = {
+/* =========================================================
+   SECTION FIELDS
+========================================================= */
+
+const sectionFields: Record<
+  SectionKey,
+  SectionField[]
+> = {
   company_information: [
-    { name: "company_name", label: "Företagsnamn", type: "text" },
-    { name: "registration_number", label: "Organisationsnummer", type: "text" },
-    { name: "company_mailadress", label: "Företagets mailadress", type: "text" },
-    { name: "company_phone_number", label: "Företagstelefonnummer", type: "text" },
-    { name: "legal_entity_type", label: "Juridisk enhetstyp", type: "text" },
+    {
+      name: "company_name",
+      label: "Company Name",
+      type: "text",
+    },
+    {
+      name: "registration_number",
+      label: "Organization Number",
+      type: "text",
+    },
+    {
+      name: "company_mailadress",
+      label: "Company Email",
+      type: "email",
+    },
+    {
+      name: "company_phone_number",
+      label: "Company Phone",
+      type: "tel",
+    },
+    {
+      name: "legal_entity_type",
+      label: "Legal Entity Type",
+      type: "text",
+    },
     {
       name: "date_of_registration",
-      label: "Registreringsdatum",
+      label: "Registration Date",
       type: "date",
     },
-    { name: "vat_number", label: "momsnummer", type: "text" },
-    { name: "industry_code", label: "Branschkod", type: "text" },
-    { name: "visiting_address", label: "Besöksadress", type: "text" },
-    { name: "mailing_address", label: "Postadress", type: "text" },
-    { name: "postal_code", label: "Postnummer", type: "text" },
-    { name: "city", label: "Stad", type: "text" },
-    { name: "country", label: "Land", type: "text" },
+    {
+      name: "vat_number",
+      label: "VAT Number",
+      type: "text",
+    },
+    {
+      name: "industry_code",
+      label: "Industry Code",
+      type: "text",
+    },
+    {
+      name: "visiting_address",
+      label: "Visiting Address",
+      type: "text",
+    },
+    {
+      name: "mailing_address",
+      label: "Mailing Address",
+      type: "text",
+    },
+    {
+      name: "postal_code",
+      label: "Postal Code",
+      type: "text",
+    },
+    {
+      name: "city",
+      label: "City",
+      type: "text",
+    },
+    {
+      name: "country",
+      label: "Country",
+      type: "text",
+    },
     {
       name: "business_description",
-      label: "Verksamhetsbeskrivning",
+      label: "Business Description",
       type: "textarea",
     },
-    { name: "upload_logo", label: "Ladda upp logotyp", type: "file" },
+    {
+      name: "upload_logo",
+      label: "Upload Logo",
+      type: "file",
+    },
     {
       name: "system_language",
-      label: "Systemspråk",
+      label: "System Language",
       type: "select0",
       multiple: true,
       options: [
-        { value: "Svenska", label: "Svenska" },
-        { value: "Engelska", label: "Engelska" },
-      ]
+        {
+          value: "Svenska",
+          label: "Swedish",
+        },
+        {
+          value: "Engelska",
+          label: "English",
+        },
+      ],
     },
-
-
-
-
-
-    // { name: "f_tax_status", label: "F-tax Status", type: "checkbox" },
   ],
-  address_details: [
-    // { name: "visiting_address", label: "Visiting Address", type: "text" },
-    // { name: "mailing_address", label: "Mailing Address", type: "text" },
-    // { name: "postal_code", label: "Postal Code", type: "text" },
-    // { name: "city", label: "City", type: "text" },
-    // { name: "country", label: "Country", type: "text" },
-  ],
+
+  address_details: [],
+
   contact_information: [
-    { name: "first", label: "Förnamn", type: "text" },
-    { name: "last", label: "Efternamn", type: "text" },
-    { name: "email", label: "E-post", type: "email" },
-    { name: "phone", label: "Telefon", type: "tel" },
-    { name: "role", label: "Roll/titel", type: "text" },
+    {
+      name: "first",
+      label: "First Name",
+      type: "text",
+    },
+    {
+      name: "last",
+      label: "Last Name",
+      type: "text",
+    },
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+    },
+    {
+      name: "phone",
+      label: "Phone",
+      type: "tel",
+    },
+    {
+      name: "role",
+      label: "Role / Title",
+      type: "text",
+    },
   ],
-  payment_settings: [
-    { name: "bank_account_number", label: "Bankkonto", type: "text" },
-    { name: "iban", label: "IBAN", type: "text" },
-    { name: "bic_swift", label: "BIC/SWIFT", type: "text" },
-    { name: "swish_number", label: "Swish nummer", type: "text" },
 
+  payment_settings: [
+    {
+      name: "bank_account_number",
+      label: "Bank Account",
+      type: "text",
+    },
+    {
+      name: "iban",
+      label: "IBAN",
+      type: "text",
+    },
+    {
+      name: "bic_swift",
+      label: "BIC / SWIFT",
+      type: "text",
+    },
+    {
+      name: "swish_number",
+      label: "Swish Number",
+      type: "text",
+    },
   ],
+
   invoice_settings: [
     {
       name: "invoice_number_prefix",
-      label: "Fakturanummerprefix",
+      label: "Invoice Number Prefix",
       type: "text",
     },
-    { name: "invoice_counter", label: "Fakturaräknare", type: "number" },
-    { name: "payment_terms", label: "Betalningsvillkor för faktura", type: "text" },
     {
-      name: "late_payment_interest_rate",
-      label: "Dröjsmålsränta vid fakturabetalning",
+      name: "invoice_counter",
+      label: "Invoice Counter",
       type: "number",
     },
-    { name: "invoice_fee", label: "Fakturaavgift", type: "number" },
-    { name: "currency", label: "Valuta", type: "text" },
-    { name: "invoice_language", label: "Språk", type: "text" },
-    { name: "reference_person", label: "Referensperson", type: "text" },
+    {
+      name: "payment_terms",
+      label: "Invoice Payment Terms",
+      type: "text",
+    },
+    {
+      name: "late_payment_interest_rate",
+      label: "Late Payment Interest Rate",
+      type: "number",
+    },
+    {
+      name: "invoice_fee",
+      label: "Invoice Fee",
+      type: "number",
+    },
+    {
+      name: "currency",
+      label: "Currency",
+      type: "text",
+    },
+    {
+      name: "invoice_language",
+      label: "Invoice Language",
+      type: "text",
+    },
+    {
+      name: "reference_person",
+      label: "Reference Person",
+      type: "text",
+    },
   ],
+
   contract_settings: [
     {
       name: "default_invoice_message",
-      label: "Standardfakturameddelande",
+      label: "Default Invoice Message",
       type: "textarea",
     },
     {
       name: "default_contract_duration",
-      label: "Kontraktets längd (månader)",
+      label: "Contract Duration (Months)",
       type: "number",
     },
-    { name: "signing_method", label: "Signing Method", type: "text" },
+    {
+      name: "signing_method",
+      label: "Signing Method",
+      type: "text",
+    },
     {
       name: "contract_version_control",
-      label: "Kontraktsversion Control",
+      label: "Contract Version Control",
       type: "text",
     },
     {
       name: "contract_contact_person",
-      label: "Kontraktskontaktperson",
+      label: "Contract Contact Person",
       type: "text",
     },
     {
       name: "contract_terms",
-      label: "Avtalsvillkor",
+      label: "Contract Terms",
       type: "textarea",
     },
   ],
-  // other_settings: [
-  // { name: "api_keys", label: "API Keys", type: "text" },
-  // { name: "tax_settings", label: "Tax Settings", type: "text" },
-  // ],
 };
 
-const EditProfile = ({ onUpdateSuccess, section }: EditProfileProps) => {
-  const { user, loading: profileLoading } = useUserProfile();
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
+/* =========================================================
+   SECTION ICONS
+========================================================= */
 
-  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      setLogoFile(file);
-      setLogoPreviewUrl(URL.createObjectURL(file));
+const sectionIcons: Record<
+  SectionKey,
+  React.ElementType
+> = {
+  company_information: Building2,
+  address_details: MapPin,
+  contact_information: UserRound,
+  payment_settings: CreditCard,
+  invoice_settings: ReceiptText,
+  contract_settings: FileSignature,
+};
+
+/* =========================================================
+   COMPONENT
+========================================================= */
+
+const EditProfile = ({
+  onUpdateSuccess,
+  section,
+}: EditProfileProps) => {
+  const {
+    user,
+    loading: profileLoading,
+  } = useUserProfile();
+
+  const [formData, setFormData] = useState<
+    Record<string, any>
+  >({});
+
+  const [isUpdating, setIsUpdating] =
+    useState(false);
+
+  const [
+    showPasswordModal,
+    setShowPasswordModal,
+  ] = useState(false);
+
+  const [logoFile, setLogoFile] =
+    useState<File | null>(null);
+
+  const [
+    logoPreviewUrl,
+    setLogoPreviewUrl,
+  ] = useState<string | null>(null);
+
+  const [isSearching, setIsSearching] =
+    useState(false);
+
+  const [searchError, setSearchError] =
+    useState("");
+
+  const [isDarkMode, setIsDarkMode] =
+    useState(() => {
+      if (typeof document === "undefined") {
+        return false;
+      }
+
+      return document.documentElement.classList.contains(
+        "dark"
+      );
+    });
+
+  /* =========================================================
+     WATCH GLOBAL DARK MODE
+  ========================================================= */
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const root = document.documentElement;
+
+    const observer =
+      new MutationObserver(() => {
+        setIsDarkMode(
+          root.classList.contains("dark")
+        );
+      });
+
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  /* =========================================================
+     REACT SELECT STYLES
+  ========================================================= */
+
+  const selectStyles = useMemo(
+    () => ({
+      control: (
+        base: any,
+        state: any
+      ) => ({
+        ...base,
+        minHeight: 48,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: state.isFocused
+          ? "#2563eb"
+          : isDarkMode
+            ? "#334155"
+            : "#e2e8f0",
+        backgroundColor: isDarkMode
+          ? "#0f172a"
+          : "#f8fafc",
+        boxShadow: state.isFocused
+          ? "0 0 0 2px rgba(37, 99, 235, 0.15)"
+          : "none",
+        "&:hover": {
+          borderColor: "#2563eb",
+        },
+      }),
+
+      menu: (base: any) => ({
+        ...base,
+        zIndex: 9999,
+        borderRadius: 12,
+        overflow: "hidden",
+        backgroundColor: isDarkMode
+          ? "#0f172a"
+          : "#ffffff",
+        border: `1px solid ${
+          isDarkMode
+            ? "#334155"
+            : "#e2e8f0"
+        }`,
+      }),
+
+      option: (
+        base: any,
+        state: any
+      ) => ({
+        ...base,
+        cursor: "pointer",
+        backgroundColor:
+          state.isFocused
+            ? "#2563eb"
+            : isDarkMode
+              ? "#0f172a"
+              : "#ffffff",
+        color: state.isFocused
+          ? "#ffffff"
+          : isDarkMode
+            ? "#e2e8f0"
+            : "#0f172a",
+      }),
+
+      singleValue: (base: any) => ({
+        ...base,
+        color: isDarkMode
+          ? "#e2e8f0"
+          : "#0f172a",
+      }),
+
+      multiValue: (base: any) => ({
+        ...base,
+        backgroundColor: isDarkMode
+          ? "#1e3a8a"
+          : "#dbeafe",
+        borderRadius: 8,
+      }),
+
+      multiValueLabel: (base: any) => ({
+        ...base,
+        color: isDarkMode
+          ? "#dbeafe"
+          : "#1e40af",
+      }),
+
+      multiValueRemove: (
+        base: any
+      ) => ({
+        ...base,
+        color: isDarkMode
+          ? "#bfdbfe"
+          : "#1e40af",
+        ":hover": {
+          backgroundColor: "#2563eb",
+          color: "#ffffff",
+        },
+      }),
+
+      input: (base: any) => ({
+        ...base,
+        color: isDarkMode
+          ? "#e2e8f0"
+          : "#0f172a",
+      }),
+
+      placeholder: (base: any) => ({
+        ...base,
+        color: isDarkMode
+          ? "#64748b"
+          : "#94a3b8",
+      }),
+
+      indicatorSeparator: (
+        base: any
+      ) => ({
+        ...base,
+        backgroundColor: isDarkMode
+          ? "#334155"
+          : "#e2e8f0",
+      }),
+
+      dropdownIndicator: (
+        base: any
+      ) => ({
+        ...base,
+        color: isDarkMode
+          ? "#94a3b8"
+          : "#64748b",
+        "&:hover": {
+          color: "#2563eb",
+        },
+      }),
+    }),
+    [isDarkMode]
+  );
+
+  /* =========================================================
+     LOGO FILE HANDLER
+  ========================================================= */
+
+  const handleLogoFile = (
+    file: File
+  ) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error(
+        "Please select a valid image file."
+      );
+      return;
+    }
+
+    setLogoFile(file);
+
+    const previewUrl =
+      URL.createObjectURL(file);
+
+    setLogoPreviewUrl(previewUrl);
+  };
+
+  const handleFileDrop = (
+    event: React.DragEvent<HTMLDivElement>
+  ) => {
+    event.preventDefault();
+
+    const file =
+      event.dataTransfer.files?.[0];
+
+    if (file) {
+      handleLogoFile(file);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      setLogoFile(file);
-      setLogoPreviewUrl(URL.createObjectURL(file));
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file =
+      event.target.files?.[0];
+
+    if (file) {
+      handleLogoFile(file);
     }
   };
 
-  // useEffect(() => {
-  //   if (user) {
-  //     setFormData({
-  //       ...user,
-  //       // Initialize any missing fields with empty values
-  //       // company_name: user.company_name || "",
-  //       // registration_number: user.registration_number || "",
-  //       // Initialize all other fields similarly
-  //     });
-  //   }
-  // }, [user]);
+  /* =========================================================
+     CLEANUP LOGO PREVIEW
+  ========================================================= */
+
+  useEffect(() => {
+    return () => {
+      if (
+        logoPreviewUrl?.startsWith(
+          "blob:"
+        )
+      ) {
+        URL.revokeObjectURL(
+          logoPreviewUrl
+        );
+      }
+    };
+  }, [logoPreviewUrl]);
+
+  /* =========================================================
+     INPUT CHANGE
+  ========================================================= */
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement
+    >
   ) => {
-    const { name, value, type } = e.target;
+    const {
+      name,
+      value,
+      type,
+    } = event.target;
+
     const checked =
-      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+      type === "checkbox"
+        ? (
+            event.target as HTMLInputElement
+          ).checked
+        : undefined;
 
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value,
     }));
   };
 
-  const handleOrgSearch = async () => {
-    const orgNumber = formData.registration_number;
+  /* =========================================================
+     ORGANIZATION SEARCH
+  ========================================================= */
 
+  const handleOrgSearch = async () => {
+    const orgNumber =
+      formData.registration_number;
 
     if (!orgNumber) {
-      setSearchError("Organization number is required");
+      setSearchError(
+        "Organization number is required."
+      );
       return;
     }
 
@@ -281,20 +731,24 @@ const EditProfile = ({ onUpdateSuccess, section }: EditProfileProps) => {
     setSearchError("");
 
     try {
-      console.log("Attempting to search organization with number:", orgNumber);
-      console.log(
-        "Using endpoint:",
-        `${BACKEND_API_ENDPOINT}agreements/external/agreements`
-      ); // Debug log
+      const token =
+        sessionStorage.getItem("token") ||
+        localStorage.getItem("token") ||
+        "";
 
       const response = await fetch(
         `${BACKEND_API_ENDPOINT}agreements/external/agreements`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
-            Authorization:
-              "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkZXBhcnRtZW50X2lkIjoiMDAwMDA5M2UyNDY5YjNhOGJmMTQ4NGVmODA5MWEyM2MiLCJ1c2VyX25hbWUiOiIwMDA1Y2ViN2I0ZmJjNmI1YjRlMzNjMTdlNGM4NDAzZiIsImRlcGFydG1lbnRfbmFtZSI6IlZhbGl0aXZlIENyZWRpdCIsImF1dGhvcml0aWVzIjpbIlZMVFZfQ1JFRElUX1NFQVJDSF9ETyIsIlZBTElUSVZFX0FQSV9BQ0NFU1MiXSwiY2xpZW50X2lkIjoiSU5TX1BBUlRORVIiLCJhdWQiOlsiVkFMSVRJVkUiXSwidXNlcl9pZCI6IjAwMDVjZWI3YjRmYmM2YjViNGUzM2MxN2U0Yzg0MDNmIiwidXNlcl9yZWFsX25hbWUiOiJTYW1pciBLYXNzZW0iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUi",
+            "Content-Type":
+              "application/json",
+
+            ...(token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : {}),
           },
           body: JSON.stringify({
             type: "ORG",
@@ -303,542 +757,1186 @@ const EditProfile = ({ onUpdateSuccess, section }: EditProfileProps) => {
         }
       );
 
-      console.log("API response status:", response.status);
-
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error("API error response:", errorData); // Debug log
-        throw new Error(errorData.message || "Network response was not ok");
+        const errorData =
+          await response
+            .json()
+            .catch(() => ({}));
+
+        throw new Error(
+          errorData?.message ||
+            "Organization search failed."
+        );
       }
 
-      const data: OrgSearchResponse = await response.json();
-      console.log("API success response:", data); // Debug log
+      const data: OrgSearchResponse =
+        await response.json();
 
-      if (data.success && data.count > 0) {
-        const orgData = data.data[0];
-        console.log("Organization data:", orgData); // Debug log
+      if (
+        data.success &&
+        data.count > 0 &&
+        data.data?.length > 0
+      ) {
+        const orgData =
+          data.data[0];
 
-        // Get primary address (VISIT or first available)
-        const primaryAddress =
-          orgData.addresses.find((a) => a.kind === "VISIT") ||
-          orgData.addresses[0];
-        console.log("Primary address:", primaryAddress); // Debug log
-
-        // Get primary phone (OFFICIAL or first available)
         const primaryPhone =
-          orgData.phones.find((p) => p.kind === "OFFICIAL") ||
-          orgData.phones[0];
-        console.log("Primary phone:", primaryPhone); // Debug log
+          orgData.phones?.find(
+            (phone) =>
+              phone.kind === "OFFICIAL"
+          ) ||
+          orgData.phones?.[0];
 
-        const formatAddress = (addr: any) => {
-          if (!addr) return "";
-          return `${addr.street} ${addr.number}, ${addr.zip} ${addr.city}`;
+        const formatAddress = (
+          address?: OrgAddress
+        ) => {
+          if (!address) {
+            return "";
+          }
+
+          return `${address.street || ""} ${
+            address.number || ""
+          }, ${address.zip || ""} ${
+            address.city || ""
+          }`.trim();
         };
 
-        const visitingAddress = orgData.addresses.find((a) => a.kind === "VISIT");
-        const mailingAddress = orgData.addresses.find((a) => a.kind === "MAIL");
+        const visitingAddress =
+          orgData.addresses?.find(
+            (address) =>
+              address.kind === "VISIT"
+          );
 
-
+        const mailingAddress =
+          orgData.addresses?.find(
+            (address) =>
+              address.kind === "MAIL"
+          );
 
         const updatedData = {
-          company_name: orgData.orgName.name,
-          registration_number: orgData.legalId,
-          vat_number: orgData.taxInfo.vatNumber,
-          legal_entity_type: orgData.legalForm?.name || "",
-          date_of_registration: orgData.lifecycle.establishedOn,
-          industry_code: orgData.primaryBusinessCategory.code,
-          business_description: orgData.primaryBusinessCategory.description,
+          company_name:
+            orgData.orgName?.name ||
+            "",
 
-          // 👇 ab full address string jaegi inputs me
-          visiting_address: formatAddress(visitingAddress),
-          mailing_address: formatAddress(mailingAddress),
+          registration_number:
+            orgData.legalId || "",
 
-          postal_code: visitingAddress?.zip || "",
-          city: visitingAddress?.city || "",
-          country: visitingAddress?.country || "",
+          vat_number:
+            orgData.taxInfo?.vatNumber ||
+            "",
 
-          phone: primaryPhone?.number || "",
+          legal_entity_type:
+            orgData.legalForm?.name ||
+            "",
+
+          date_of_registration:
+            orgData.lifecycle
+              ?.establishedOn
+              ?.split("T")[0] || "",
+
+          industry_code:
+            orgData
+              .primaryBusinessCategory
+              ?.code || "",
+
+          business_description:
+            orgData
+              .primaryBusinessCategory
+              ?.description || "",
+
+          visiting_address:
+            formatAddress(
+              visitingAddress
+            ),
+
+          mailing_address:
+            formatAddress(
+              mailingAddress
+            ),
+
+          postal_code:
+            visitingAddress?.zip || "",
+
+          city:
+            visitingAddress?.city || "",
+
+          country:
+            visitingAddress?.country || "",
+
+          company_phone_number:
+            primaryPhone?.number || "",
         };
 
-        console.log("Updating form with:", updatedData);
-        setFormData((prev) => ({ ...prev, ...updatedData }));
+        setFormData((prev) => ({
+          ...prev,
+          ...updatedData,
+        }));
 
-        toast.success("Organization details loaded successfully");
+        toast.success(
+          "Organization details loaded successfully."
+        );
       } else {
-        setSearchError("No organization found with this number");
+        setSearchError(
+          "No organization found with this number."
+        );
       }
     } catch (error) {
-      console.error("Error searching organization:", error);
-      setSearchError("Failed to search organization. Please try again.");
+      console.error(
+        "Organization search error:",
+        error
+      );
+
+      setSearchError(
+        error instanceof Error
+          ? error.message
+          : "Failed to search organization. Please try again."
+      );
     } finally {
       setIsSearching(false);
     }
   };
 
+  /* =========================================================
+     FETCH COMPANY DETAILS
+  ========================================================= */
+
   useEffect(() => {
-    const fetchCompanyDetails = async () => {
-      const response = await makeGetRequest(
-        "companyDetail/getCompanyDetailByUser"
-      );
-      console.log("Company details response:", response);
+    let isMounted = true;
 
-      if (response.data.success) {
-        const company = response.data.data;
+    const fetchCompanyDetails =
+      async () => {
+        try {
+          const response =
+            await makeGetRequest(
+              "companyDetail/getCompanyDetailByUser"
+            );
 
-          console.log("-------------------------------------------------------");
-          console.log("Rendering EditProfile for section:", company);
-          console.log("-------------------------------------------------------");
+          if (!isMounted) {
+            return;
+          }
 
-        const flattened = {
-          company_name: company.company_name || "",
-          registration_number: company.registrationNumber || "",
-          legal_entity_type: company.legalEntityType || "",
-          date_of_registration: company.dateOfRegistration?.split("T")[0] || "",
-          vat_number: company.vatNumber || "",
-          industry_code: company.industry_code || "",
-          business_description: company.business_description || "",
-          system_language: company.preferred_language || "",
-          country: company.country || "",
-          city: company.city || "",
-          postal_code: company.postalCode || "",
+          if (response?.data?.success) {
+            const company =
+              response.data.data || {};
 
-          visiting_address: company.visitingAddress || "",
-          mailing_address: company.mailingAddress || "",
-          company_mailadress: company.company_mailaddress || "",
-          company_phone_number: company.company_phonenumber || "",
+            const preferredLanguage =
+              company.preferred_language;
 
+            const languages = Array.isArray(
+              preferredLanguage
+            )
+              ? preferredLanguage
+              : preferredLanguage
+                ? String(
+                    preferredLanguage
+                  )
+                    .split(",")
+                    .map(
+                      (item) =>
+                        item.trim()
+                    )
+                    .filter(Boolean)
+                : [];
 
+            const flattened = {
+              company_name:
+                company.company_name ||
+                "",
 
-          first: company.first || "",
-          last: company.last || "",
-          email: company.emailAddress || "",
-          phone: company.phoneNumber || "",
-          role: company.roleTitle || "",
+              registration_number:
+                company.registrationNumber ||
+                "",
 
-          bank_account_number: company.bankAccountNumber || "",
-          iban: company.iban_Bic || "",
-          swish_number: company.swish_Number || "",
-          bic_swift: company.bicSwift || "",
-          payment_terms: company.payment_Terms || "",
-          late_payment_interest_rate: company.late_payment_interest_rate || "",
-          
-          invoice_fee: company.invoice_Fee || "",
+              legal_entity_type:
+                company.legalEntityType ||
+                "",
 
-          invoice_number_prefix: company.invoice_number_prefix || "",
-          invoice_counter: company.invoice_number_counter || "",
-          currency: company.currency || "",
-          invoice_language: company.invoice_language || "",
-          reference_person: company.reference_person || "",
+              date_of_registration:
+                company.dateOfRegistration
+                  ?.split("T")[0] ||
+                "",
 
-          default_invoice_message: company.default_invoice_message || "",
-          default_contract_duration: company.contract_duration || "",
-          signing_method: company.signing_method || "",
-          contract_version_control: company.contract_version_control || "",
-          contract_contact_person: company.contract_contact_person || "",
-          contract_terms: company.contract_terms || "",
-        };
+              vat_number:
+                company.vatNumber ||
+                "",
 
+              industry_code:
+                company.industry_code ||
+                "",
 
+              business_description:
+                company.business_description ||
+                "",
 
-        setFormData(flattened);
+              system_language:
+                languages,
 
-        if (company.attachments) {
-          setLogoPreviewUrl(company.attachments);
+              country:
+                company.country || "",
+
+              city:
+                company.city || "",
+
+              postal_code:
+                company.postalCode || "",
+
+              visiting_address:
+                company.visitingAddress ||
+                "",
+
+              mailing_address:
+                company.mailingAddress ||
+                "",
+
+              company_mailadress:
+                company.company_mailaddress ||
+                "",
+
+              company_phone_number:
+                company.company_phonenumber ||
+                "",
+
+              first:
+                company.first || "",
+
+              last:
+                company.last || "",
+
+              email:
+                company.emailAddress || "",
+
+              phone:
+                company.phoneNumber || "",
+
+              role:
+                company.roleTitle || "",
+
+              bank_account_number:
+                company.bankAccountNumber ||
+                "",
+
+              iban:
+                company.iban_Bic || "",
+
+              swish_number:
+                company.swish_Number ||
+                "",
+
+              bic_swift:
+                company.bicSwift || "",
+
+              payment_terms:
+                company.payment_Terms ||
+                "",
+
+              late_payment_interest_rate:
+                company.late_payment_interest_rate ||
+                "",
+
+              invoice_fee:
+                company.invoice_Fee || "",
+
+              invoice_number_prefix:
+                company.invoice_number_prefix ||
+                "",
+
+              invoice_counter:
+                company.invoice_number_counter ||
+                "",
+
+              currency:
+                company.currency || "",
+
+              invoice_language:
+                company.invoice_language ||
+                "",
+
+              reference_person:
+                company.reference_person ||
+                "",
+
+              default_invoice_message:
+                company.default_invoice_message ||
+                "",
+
+              default_contract_duration:
+                company.contract_duration ||
+                "",
+
+              signing_method:
+                company.signing_method || "",
+
+              contract_version_control:
+                company.contract_version_control ||
+                "",
+
+              contract_contact_person:
+                company.contract_contact_person ||
+                "",
+
+              contract_terms:
+                company.contract_terms ||
+                "",
+            };
+
+            setFormData(
+              flattened
+            );
+
+            if (
+              company.attachments
+            ) {
+              setLogoPreviewUrl(
+                company.attachments
+              );
+            }
+          } else {
+            toast.error(
+              response?.data?.message ||
+                "Failed to fetch company details."
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Fetch company details error:",
+            error
+          );
+
+          if (isMounted) {
+            toast.error(
+              "Failed to load company details."
+            );
+          }
         }
-      } else {
-        toast.error(response.data.message || "Failed to fetch company details");
+      };
+
+    fetchCompanyDetails();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  /* =========================================================
+     BUILD UPDATE DATA
+  ========================================================= */
+
+  const buildUpdateData =
+    (): Record<string, any> => {
+      switch (section) {
+        case "company_information":
+          return {
+            type: "Company Information",
+
+            company_name:
+              formData.company_name,
+
+            registrationNumber:
+              formData.registration_number,
+
+            legalEntityType:
+              formData.legal_entity_type,
+
+            dateOfRegistration:
+              formData.date_of_registration,
+
+            vatNumber:
+              formData.vat_number,
+
+            industry_code:
+              formData.industry_code,
+
+            preferred_language:
+              formData.system_language,
+
+            business_description:
+              formData.business_description,
+
+            system_language:
+              formData.system_language,
+
+            visiting_address:
+              formData.visiting_address,
+
+            mailing_address:
+              formData.mailing_address,
+
+            postalCode:
+              formData.postal_code,
+
+            city:
+              formData.city,
+
+            country:
+              formData.country,
+
+            company_mailadress:
+              formData.company_mailadress,
+
+            company_phone_number:
+              formData.company_phone_number,
+          };
+
+        case "contact_information":
+          return {
+            type: "Contact Information",
+
+            first:
+              formData.first,
+
+            last:
+              formData.last,
+
+            emailAddress:
+              formData.email,
+
+            phoneNumber:
+              formData.phone,
+
+            user:
+              formData.role,
+          };
+
+        case "payment_settings":
+          return {
+            type: "Payment Settings",
+
+            bankAccountNumber:
+              formData.bank_account_number,
+
+            iban_Bic:
+              formData.iban,
+
+            bicSwift:
+              formData.bic_swift,
+
+            swish_Number:
+              formData.swish_number,
+
+            payment_Terms:
+              formData.payment_terms,
+
+            late_payment_interest_rate:
+              formData.late_payment_interest_rate,
+
+            invoice_Fee:
+              formData.invoice_fee,
+          };
+
+        case "invoice_settings":
+          return {
+            type: "Invoice Settings",
+
+            invoice_number_counter:
+              formData.invoice_counter,
+
+            currency:
+              formData.currency,
+
+            invoice_language:
+              formData.invoice_language,
+
+            reference_person:
+              formData.reference_person,
+
+            invoice_number_prefix:
+              formData.invoice_number_prefix,
+
+            payment_Terms:
+              formData.payment_terms,
+
+            late_payment_interest_rate:
+              formData.late_payment_interest_rate,
+
+            invoice_Fee:
+              formData.invoice_fee,
+          };
+
+        case "contract_settings":
+          return {
+            type: "Contract Settings",
+
+            default_invoice_message:
+              formData.default_invoice_message,
+
+            contract_duration:
+              formData.default_contract_duration,
+
+            signing_method:
+              formData.signing_method,
+
+            contract_version_control:
+              formData.contract_version_control,
+
+            contract_contact_person:
+              formData.contract_contact_person,
+
+            contract_terms:
+              formData.contract_terms,
+          };
+
+        default:
+          return {};
       }
     };
 
-    fetchCompanyDetails();
-  }, []);
+  /* =========================================================
+     SUBMIT
+  ========================================================= */
 
   const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement> | Event
+    event: React.FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
-    if (!user) return;
+
+    if (!user) {
+      toast.error(
+        "Your user session was not found. Please log in again."
+      );
+      return;
+    }
 
     setIsUpdating(true);
 
     try {
-      let updateData: Record<string, any> = {};
+      const updateData =
+        buildUpdateData();
 
-      switch (section) {
-        case "company_information":
-          updateData = {
-            type: "Company Information",
-            company_name: formData.company_name,
-            registrationNumber: formData.registration_number,
-            legalEntityType: formData.legal_entity_type,
-            dateOfRegistration: formData.date_of_registration,
-            vatNumber: formData.vat_number,
-            industry_code: formData.industry_code,
-            preferred_language: formData.system_language,
-            business_description: formData.business_description,
-            system_language: formData.system_language,
-            visiting_address: formData.visiting_address,
-            mailing_address: formData.mailing_address,
-            postalCode: formData.postal_code,
-            city: formData.city,
-            country: formData.country,
-            company_mailadress: formData.company_mailadress,
-            company_phone_number: formData.company_phone_number,
-          };
-          break;
+      let response: any;
 
-        // case "address_details":
-        //   updateData = {
-        //     type: "Address Details",
-        //     visitingAddress: {
-        //         street: formData.visiting_address,
-        //         floor: formData.floor || "N/A",
-        //         door: formData.door || "N/A",
-        //       },
-        //       mailingAddress: {
-        //         street: formData.mailing_address,
-        //         city: formData.city,
-        //       },
+      if (
+        section ===
+        "company_information"
+      ) {
+        const formDataToSend =
+          new FormData();
 
-        //     postalCode: formData.postal_code,
-        //     city: formData.city,
-        //     country: formData.country,
-        //   };
-        //   break;
-
-
-        case "contact_information":
-          updateData = {
-            type: "Contact Information",
-            first: formData.first,
-            last: formData.last,
-            emailAddress: formData.email,
-            phoneNumber: formData.phone,
-            user: formData.role,
-          };
-          break;
-
-        case "payment_settings":
-          updateData = {
-            type: "Payment Settings",
-            bankAccountNumber: formData.bank_account_number,
-            iban_Bic: formData.iban,
-            bicSwift: formData.bic_swift,
-            swish_Number: formData.swish_number,
-            payment_Terms: formData.payment_terms,
-            late_payment_interest_rate: formData.late_payment_interest_rate,
-            invoice_Fee: formData.invoice_fee,
-          };
-          break;
-
-        case "invoice_settings":
-          updateData = {
-            type: "Invoice Settings",
-            invoice_number_counter: formData.invoice_counter,
-            currency: formData.currency,
-            invoice_language: formData.invoice_language,
-            reference_person: formData.reference_person,
-            invoice_number_prefix: formData.invoice_number_prefix,
-            payment_Terms: formData.payment_terms,
-            late_payment_interest_rate: formData.late_payment_interest_rate,
-            invoice_Fee: formData.invoice_fee,
-          };
-          break;
-
-        case "contract_settings":
-          updateData = {
-            type: "Contract Settings",
-            default_invoice_message: formData.default_invoice_message,
-            contract_duration: formData.default_contract_duration,
-            signing_method: formData.signing_method,
-            contract_version_control: formData.contract_version_control,
-            contract_contact_person: formData.contract_contact_person,
-            contract_terms: formData.contract_terms,
-          };
-          break;
-
-        default:
-          throw new Error("Invalid section");
-      }
-
-      // ✅ Create FormData and append the fields
-      const formDataToSend = new FormData();
-
-      // Append logo file if exists
-      if (logoFile) {
-        formDataToSend.append("file", logoFile);
-      }
-
-      // Append all keys from updateData
-      for (const [key, value] of Object.entries(updateData)) {
-        if (typeof value === "object") {
-          formDataToSend.append(key, JSON.stringify(value));
-        } else {
-          formDataToSend.append(key, value);
+        if (logoFile) {
+          formDataToSend.append(
+            "file",
+            logoFile
+          );
         }
-      }
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0], pair[1]);
 
-      }
+        Object.entries(
+          updateData
+        ).forEach(
+          ([key, value]) => {
+            if (
+              value === undefined ||
+              value === null
+            ) {
+              return;
+            }
 
-
-      if (section === "company_information") {
-        const response = await makePutRequest(
-          `companyDetail/update`,
-          formDataToSend,
-          "multipart/form-data"
+            if (
+              typeof value ===
+              "object"
+            ) {
+              formDataToSend.append(
+                key,
+                JSON.stringify(value)
+              );
+            } else {
+              formDataToSend.append(
+                key,
+                String(value)
+              );
+            }
+          }
         );
 
+        response =
+          await makePutRequest(
+            "companyDetail/update",
+            formDataToSend,
+            "multipart/form-data"
+          );
+      } else {
+        response =
+          await makePutRequest(
+            "companyDetail/update",
+            updateData
+          );
+      }
 
-        if (response.data.success) {
-          toast.success(`${sectionTitles[section]} updated successfully`);
-          if (onUpdateSuccess) onUpdateSuccess();
-        } else {
-          throw new Error(response.data.message || "Failed to update profile");
+      if (response?.data?.success) {
+        toast.success(
+          `${sectionTitles[section]} updated successfully.`
+        );
+
+        if (onUpdateSuccess) {
+          onUpdateSuccess();
         }
       } else {
-        const response = await makePutRequest(
-          `companyDetail/update`,
-          updateData
+        throw new Error(
+          response?.data?.message ||
+            "Failed to update profile."
         );
-        if (response.data.success) {
-          toast.success(`${sectionTitles[section]} updated successfully`);
-          if (onUpdateSuccess) onUpdateSuccess();
-        } else {
-          throw new Error(response.data.message || "Failed to update profile");
-        }
       }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred while updating profile");
+    } catch (error) {
+      console.error(
+        "Profile update error:",
+        error
+      );
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "An error occurred while updating profile."
+      );
     } finally {
       setIsUpdating(false);
     }
   };
 
+  /* =========================================================
+     LOADING
+  ========================================================= */
+
   if (profileLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+      <div className="flex min-h-[320px] w-full items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/40">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
+          </div>
+
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            Loading profile...
+          </p>
+        </div>
       </div>
     );
   }
 
+  /* =========================================================
+     ADDRESS DETAILS EMPTY STATE
+  ========================================================= */
+
   if (section === "address_details") {
-    return null;
+    return (
+      <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="border-b border-slate-200 bg-slate-50 px-5 py-5 dark:border-slate-800 dark:bg-slate-950/60 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+              <MapPin className="h-5 w-5" />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                Address Details
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Your address information is managed under Company Information.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-5 dark:border-blue-900/50 dark:bg-blue-950/20">
+            <div className="flex gap-3">
+              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Address information
+                </h3>
+
+                <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                  Visiting address, mailing address,
+                  postal code, city and country can be
+                  updated from the Company Information
+                  section.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
-  if (section === "contract_settings") {
-    return null;
-  }
 
+  /* =========================================================
+     CURRENT SECTION
+  ========================================================= */
 
-console.log("-------------------------------------------------------");
-  console.log("formdata:", formData);
-  console.log("-------------------------------------------------------");
+  const Icon =
+    sectionIcons[section];
 
-
-
-
+  const fields =
+    sectionFields[section];
 
   return (
-    <div className="bg-white rounded-2xl p-6 mb-6 dashboard-cards font-plus-jakarta">
-      <h2 className="text-lg font-bold text-gray-900 mb-4">
-        {sectionTitles[section]}
-      </h2>
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
-      >
-        {sectionFields[section].map((field) => (
-          <div
-            key={field.name}
-            className={
-              field.type === "textarea" || field.name === "registration_number"
-                ? "md:col-span-1"
-                : ""
-            }
-          >
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {field.label}
-            </label>
+    <>
+      <div className="mb-6 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {/* ===================================================
+            HEADER
+        =================================================== */}
 
-            {/* Special UI for registration_number field */}
-            {field.name === "registration_number" ? (
-              <div className="flex flex-col">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={handleChange}
-                    placeholder={`Skriva in ${field.label}`}
-                    className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleOrgSearch}
-                    disabled={isSearching || !formData.registration_number}
-                    className="p-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-5 py-5 dark:border-slate-800 dark:from-slate-950 dark:to-slate-900 sm:px-6">
+          <div className="flex items-start gap-3 sm:items-center">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+              <Icon className="h-5 w-5" />
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                {sectionTitles[section]}
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Manage your{" "}
+                {sectionTitles[
+                  section
+                ].toLowerCase()}{" "}
+                and keep your DealerPro account information up to date.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ===================================================
+            FORM
+        =================================================== */}
+
+        <form
+          onSubmit={handleSubmit}
+          className="p-5 sm:p-6"
+        >
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {fields.map(
+              (field) => {
+                const isFullWidth =
+                  field.type ===
+                    "textarea" ||
+                  field.type === "file";
+
+                return (
+                  <div
+                    key={
+                      field.name
+                    }
+                    className={
+                      isFullWidth
+                        ? "md:col-span-2"
+                        : ""
+                    }
                   >
-                    {isSearching ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                    {/* =================================================
+                        LABEL
+                    ================================================= */}
+
+                    <label
+                      htmlFor={
+                        field.name
+                      }
+                      className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
+                    >
+                      {
+                        field.label
+                      }
+                    </label>
+
+                    {/* =================================================
+                        ORGANIZATION NUMBER
+                    ================================================= */}
+
+                    {field.name ===
+                    "registration_number" ? (
+                      <div>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <div className="relative flex-1">
+                            <input
+                              id={
+                                field.name
+                              }
+                              type="text"
+                              name={
+                                field.name
+                              }
+                              value={
+                                formData[
+                                  field.name
+                                ] ||
+                                ""
+                              }
+                              onChange={
+                                handleChange
+                              }
+                              placeholder="Enter organization number"
+                              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={
+                              handleOrgSearch
+                            }
+                            disabled={
+                              isSearching ||
+                              !formData.registration_number
+                            }
+                            className="flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                          >
+                            {isSearching ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>
+                                  Searching...
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Search className="h-4 w-4" />
+                                <span>
+                                  Search
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {searchError && (
+                          <p className="mt-2 flex items-center gap-1 text-sm text-red-600 dark:text-red-400">
+                            <X className="h-4 w-4" />
+                            {
+                              searchError
+                            }
+                          </p>
+                        )}
+                      </div>
+                    ) : field.type ===
+                      "select0" ? (
+                      /* ===============================================
+                         SELECT
+                      =============================================== */
+
+                      <Select
+                        inputId={
+                          field.name
+                        }
+                        isMulti={Boolean(
+                          field.multiple
+                        )}
+                        options={
+                          field.options ||
+                          []
+                        }
+                        value={
+                          field.multiple
+                            ? (
+                                field.options ||
+                                []
+                              ).filter(
+                                (
+                                  option
+                                ) => {
+                                  const currentValue =
+                                    formData[
+                                      field.name
+                                    ];
+
+                                  if (
+                                    Array.isArray(
+                                      currentValue
+                                    )
+                                  ) {
+                                    return currentValue.includes(
+                                      option.value
+                                    );
+                                  }
+
+                                  if (
+                                    typeof currentValue ===
+                                    "string" &&
+                                    currentValue
+                                  ) {
+                                    return currentValue
+                                      .split(
+                                        ","
+                                      )
+                                      .map(
+                                        (
+                                          item
+                                        ) =>
+                                          item.trim()
+                                      )
+                                      .includes(
+                                        option.value
+                                      );
+                                  }
+
+                                  return false;
+                                }
+                              )
+                            : (
+                                field.options ||
+                                []
+                              ).find(
+                                (
+                                  option
+                                ) =>
+                                  option.value ===
+                                  formData[
+                                    field.name
+                                  ]
+                              ) ||
+                              null
+                        }
+                        onChange={(
+                          selected: any
+                        ) => {
+                          if (
+                            field.multiple
+                          ) {
+                            const values =
+                              Array.isArray(
+                                selected
+                              )
+                                ? selected.map(
+                                    (
+                                      option: FieldOption
+                                    ) =>
+                                      option.value
+                                  )
+                                : [];
+
+                            setFormData(
+                              (
+                                prev
+                              ) => ({
+                                ...prev,
+                                [field.name]:
+                                  values,
+                              })
+                            );
+                          } else {
+                            const value =
+                              selected &&
+                              !Array.isArray(
+                                selected
+                              )
+                                ? selected.value
+                                : "";
+
+                            setFormData(
+                              (
+                                prev
+                              ) => ({
+                                ...prev,
+                                [field.name]:
+                                  value,
+                              })
+                            );
+                          }
+                        }}
+                        isClearable={
+                          !field.multiple
+                        }
+                        closeMenuOnSelect={
+                          !field.multiple
+                        }
+                        placeholder={`Select ${field.label.toLowerCase()}`}
+                        classNamePrefix="dealer-select"
+                        styles={
+                          selectStyles
+                        }
+                      />
+                    ) : field.type ===
+                      "textarea" ? (
+                      /* ===============================================
+                         TEXTAREA
+                      =============================================== */
+
+                      <textarea
+                        id={
+                          field.name
+                        }
+                        name={
+                          field.name
+                        }
+                        value={
+                          formData[
+                            field.name
+                          ] || ""
+                        }
+                        onChange={
+                          handleChange
+                        }
+                        rows={5}
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950"
+                      />
+                    ) : field.type ===
+                      "file" ? (
+                      /* ===============================================
+                         LOGO UPLOAD
+                      =============================================== */
+
+                      <div
+                        onDragOver={(
+                          event
+                        ) =>
+                          event.preventDefault()
+                        }
+                        onDrop={
+                          handleFileDrop
+                        }
+                        className="relative overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 transition hover:border-blue-400 hover:bg-blue-50/30 dark:border-slate-700 dark:bg-slate-950/60 dark:hover:border-blue-600 dark:hover:bg-blue-950/10"
+                      >
+                        <input
+                          id={
+                            field.name
+                          }
+                          type="file"
+                          accept="image/*"
+                          onChange={
+                            handleFileChange
+                          }
+                          className="hidden"
+                        />
+
+                        <label
+                          htmlFor={
+                            field.name
+                          }
+                          className="flex cursor-pointer flex-col items-center justify-center text-center"
+                        >
+                          {logoPreviewUrl ? (
+                            <div className="mb-4">
+                              <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+                                <img
+                                  src={
+                                    logoPreviewUrl
+                                  }
+                                  alt="Company logo preview"
+                                  className="h-full w-full object-contain p-3"
+                                />
+                              </div>
+
+                              <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {logoFile
+                                  ? logoFile.name
+                                  : "Current company logo"}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
+                              <UploadCloud className="h-6 w-6" />
+                            </div>
+                          )}
+
+                          <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {logoPreviewUrl
+                              ? "Choose another logo"
+                              : "Upload company logo"}
+                          </span>
+
+                          <span className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+                            PNG, JPG or WEBP
+                          </span>
+
+                          <span className="mt-3 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:text-blue-400 dark:ring-slate-700">
+                            Browse files
+                          </span>
+                        </label>
+                      </div>
                     ) : (
-                      <Search className="h-5 w-5" />
+                      /* ===============================================
+                         NORMAL INPUT
+                      =============================================== */
+
+                      <input
+                        id={
+                          field.name
+                        }
+                        type={
+                          field.type
+                        }
+                        name={
+                          field.name
+                        }
+                        value={
+                          formData[
+                            field.name
+                          ] ?? ""
+                        }
+                        onChange={
+                          handleChange
+                        }
+                        placeholder={`Enter ${field.label.toLowerCase()}`}
+                        className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-950"
+                      />
                     )}
-                  </button>
-                </div>
-                {searchError && (
-                  <p className="mt-1 text-sm text-red-600">{searchError}</p>
-                )}
-              </div>
-            ) : field.type === "select0" ? (
-              <Select
-                name={sectionFields.company_information[15].name}
-                options={sectionFields.company_information[15].options?.map((opt: any) =>
-                  typeof opt === "string"
-                    ? { value: opt.toLowerCase().replace(/\s+/g, "_"), label: opt }
-                    : opt
-                )}
-                onChange={(selectedOption) => {
-                  // Handle both single and multiple selections
-                  if (Array.isArray(selectedOption)) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      [sectionFields.company_information[15].name]: selectedOption.map(opt => opt.value),
-                    }));
-                  }
-                  else {
-                    setFormData((prev) => ({
-                      ...prev,
-                      [sectionFields.company_information[15].name]: selectedOption ? selectedOption.value : "",
-                    }));
-                  }
-                }}
-                value={
-                  sectionFields.company_information[15].multiple
-                    ? (sectionFields.company_information[15].options?.filter((opt: any) =>
-                      formData[sectionFields.company_information[15].name]?.includes(opt.value)
-                    ) || [])
-                    : sectionFields.company_information[15].options?.find((opt: any) =>
-                      opt.value === formData[sectionFields.company_information[15].name]
-                    ) || null
-                }
-                className="basic-multi-select"
-                classNamePrefix="select"
-                placeholder={sectionFields.company_information[15].label}
-              />
-            ) : field.type === "textarea" ? (
-              <textarea
-                name={field.name}
-                value={formData[field.name] || ""}
-                onChange={handleChange}
-                placeholder={`Skriva in ${field.label}`}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
-              />
-            ) : field.type === "checkbox" ? (
-              <input
-                type="checkbox"
-                name={field.name}
-                checked={formData[field.name] || false}
-                onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-            ) : field.name === "upload_logo" ? (
-              <div
-                onDrop={handleFileDrop}
-                onDragOver={(e) => e.preventDefault()}
-                className="w-full h-full p-4 border-2 border-dashed border-gray-300 rounded-lg text-center cursor-pointer hover:border-blue-400 transition-colors"
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="upload-logo"
-                />
-                <label htmlFor="upload-logo" className="cursor-pointer block">
-                  {logoPreviewUrl ? (
-                    <img
-                      src={logoPreviewUrl}
-                      alt="Preview"
-                      className="mx-auto h-24 object-contain mb-2"
-                    />
-                  ) : (
-                    <>
-                      <p className="text-sm text-gray-600">
-                        Drag and drop your logo here
-                      </p>
-                      <p className="text-sm text-blue-600 underline">
-                        or click to upload
-                      </p>
-                    </>
-                  )}
-                </label>
-              </div>
-            ) : field.type === "textarea" ? (
-              <textarea
-                name={field.name}
-                value={formData[field.name] || ""}
-                onChange={handleChange}
-                placeholder={`Skriva in ${field.label}`}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
-              />
-            ) : field.type === "checkbox" ? (
-              <input
-                type="checkbox"
-                name={field.name}
-                checked={formData[field.name] || false}
-                onChange={handleChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-            ) : (
-              <input
-                type={field.type}
-                name={field.name}
-                value={formData[field.name] || ""}
-                onChange={handleChange}
-                placeholder={`Skriva in ${field.label}`}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onClick={() => console.log("Field4:", field.name, "Value:", formData[field.name])}
-              />
+                  </div>
+                );
+              }
             )}
           </div>
-        ))}
-      </form>
-      <div className="flex flex-col md:flex-row gap-3 justify-end mb-4 w-full">
 
-        <button
-          type="button"
-          onClick={() => setShowPasswordModal(true)}
-          className="w-fit border border-blue-700 text-[#012F7A] px-6 py-2.5 rounded-lg font-medium hover:bg-blue-50 transition-colors cursor-pointer"
-        >
-          Ändra lösenord
-        </button>
-        <button
-          type="button"
-          onClick={() => handleSubmit(new Event("submit") as any)}
-          disabled={isUpdating}
-          className="w-fit bg-[#012F7A] text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70"
-        >
-          {isUpdating ? (
-            <Loader2 className="animate-spin h-5 w-5" />
-          ) : (
-            <span className="flex items-center gap-2">
-              <span className="text-lg leading-none mb-1">+</span> Spara ändringar
-            </span>
-          )}
-        </button>
+          {/* =========================================================
+              FOOTER ACTIONS
+          ========================================================= */}
+
+          <div className="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={() =>
+                setShowPasswordModal(
+                  true
+                )
+              }
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:bg-blue-950/30 dark:hover:text-blue-400 sm:w-auto"
+            >
+              <KeyRound className="h-4 w-4" />
+              Change Password
+            </button>
+
+            <button
+              type="submit"
+              disabled={isUpdating}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#012F7A] px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-blue-600 dark:hover:bg-blue-700 sm:w-auto"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Save Changes
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
+
+      {/* =========================================================
+          CHANGE PASSWORD MODAL
+      ========================================================= */}
+
       {user?.user_id && (
         <ChangePasswordModal
-          isOpen={showPasswordModal}
-          onClose={() => setShowPasswordModal(false)}
-          userId={user.user_id}
+          isOpen={
+            showPasswordModal
+          }
+          onClose={() =>
+            setShowPasswordModal(
+              false
+            )
+          }
+          userId={
+            user.user_id
+          }
         />
       )}
-    </div>
-
+    </>
   );
 };
 

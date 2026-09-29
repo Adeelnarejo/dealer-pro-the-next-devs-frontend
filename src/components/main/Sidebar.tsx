@@ -1,4 +1,12 @@
-import { NavLink } from "react-router-dom";
+import React from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import {
+  CarFront,
+  X,
+  ArrowLeft,
+  ExternalLink,
+} from "lucide-react";
+
 import {
   DashboardSidebarIcon,
   CustomersSidebarIcon,
@@ -7,118 +15,530 @@ import {
   SwishSidebarIcon,
   InvoicesSidebarIcon,
 } from "../utils/Icons";
-import { CarFront } from "lucide-react";
-
-const role = localStorage.getItem("role");
-
-const navItems = [
-  {
-    name: "Instrumentpanel", // Dashboard
-    path: "/dashboard",
-    icon: <DashboardSidebarIcon className="w-5 h-5 mr-1.5" />,
-  },
-  {
-    name: "Fordonssökning", // Vehicle Search
-    path: "/vehicles-search",
-    icon: <CarFront className="w-5 h-5 mr-1.5" />,
-  },
-  {
-    name: "Lageröversikt", // Inventory Overview
-    path: `${role === "Admin" ? "/vehicles" : "/vehicle-company"}`,
-    icon: <VehiclesSidebarIcon className="w-5 h-5 mr-1.5" />,
-  },
-  {
-    name: "Avtal", // Agreements
-    path: "/agreements",
-    icon: <AgreementsSidebarIcon className="w-5 h-5 mr-1.5" />,
-  },
-  {
-    name: "Swish",
-    path: "/swish",
-    icon: <SwishSidebarIcon className="w-5 h-5 mr-1.5" />,
-  },
-  {
-    name: "Fakturor", // Invoices
-    path: "/invoices",
-    icon: <InvoicesSidebarIcon className="w-5 h-5 mr-1.5" />,
-  },
-  {
-    name: "Kunder", // Customers
-    path: "/customers",
-    icon: <CustomersSidebarIcon className="w-5 h-5 mr-1.5" />,
-  },
-];
+import ThemeToggle from "../../theme/ThemeToggle";
 
 interface SidebarProps {
   isOpen: boolean;
   toggleSidebar?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
-  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
-  return (
-    <aside
-      className={`fixed left-0 top-0 flex-shrink-0 flex flex-col sidebar-back lg:z-1 z-50 transition-all duration-300 ${
-        isOpen || isDesktop ? "w-[240px] h-screen" : "w-[64px] h-auto"
-      }`}
-    >
-      <div className="flex items-center justify-between px-4 pt-4 pb-4 border-b border-white">
-        {isOpen || isDesktop ? (
-          <span className="font-bold text-2xl text-white font-plus-jakarta">
-            DealerPro
-          </span>
-        ) : (
-          <span className="text-white font-bold text-lg hidden lg:block">
-            DP
-          </span>
-        )}
+const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  toggleSidebar,
+}) => {
+  const navigate = useNavigate();
 
-        <div className="flex lg:hidden items-center gap-3">
+  const role = localStorage.getItem("role");
+
+  const navItems = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <DashboardSidebarIcon className="h-5 w-5" />,
+    },
+    {
+      name: "Vehicle Search",
+      path: "/vehicles-search",
+      icon: <CarFront className="h-5 w-5" />,
+    },
+    {
+      name: "Inventory",
+      path: role === "Admin" ? "/vehicles" : "/vehicle-company",
+      icon: <VehiclesSidebarIcon className="h-5 w-5" />,
+    },
+    {
+      name: "Agreements",
+      path: "/agreements",
+      icon: <AgreementsSidebarIcon className="h-5 w-5" />,
+    },
+    {
+      name: "Payments",
+      path: "/swish",
+      icon: <SwishSidebarIcon className="h-5 w-5" />,
+    },
+    {
+      name: "Invoices",
+      path: "/invoices",
+      icon: <InvoicesSidebarIcon className="h-5 w-5" />,
+    },
+    {
+      name: "Customers",
+      path: "/customers",
+      icon: <CustomersSidebarIcon className="h-5 w-5" />,
+    },
+  ];
+
+  const handleBackToWebsite = () => {
+    navigate("/");
+
+    if (
+      typeof window !== "undefined" &&
+      window.innerWidth < 1024
+    ) {
+      toggleSidebar?.();
+    }
+  };
+
+  const handleMobileNavClick = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.innerWidth < 1024
+    ) {
+      toggleSidebar?.();
+    }
+  };
+
+  return (
+    <>
+      {/* =====================================================
+          MOBILE OVERLAY
+      ====================================================== */}
+      {isOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar overlay"
+          onClick={toggleSidebar}
+          className="
+            fixed
+            inset-0
+            z-40
+            bg-black/50
+            backdrop-blur-[2px]
+            lg:hidden
+          "
+        />
+      )}
+
+      {/* =====================================================
+          SIDEBAR
+      ====================================================== */}
+      <aside
+        className={`
+          fixed
+          left-0
+          top-0
+          z-50
+          flex
+          h-screen
+          w-[250px]
+          flex-col
+          overflow-hidden
+
+          border-r
+          border-white/[0.08]
+
+          bg-[#001A36]
+
+          shadow-[10px_0_40px_rgba(0,0,0,0.18)]
+
+          transition-transform
+          duration-300
+          ease-in-out
+
+          dark:bg-[#020B16]
+
+          lg:translate-x-0
+
+          ${
+            isOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }
+        `}
+      >
+        {/* =================================================
+            BRAND
+        ================================================== */}
+        <div
+          className="
+            relative
+            flex
+            h-[76px]
+            shrink-0
+            items-center
+            justify-between
+            border-b
+            border-white/[0.08]
+            px-4
+          "
+        >
           <button
-            className="block"
-            aria-label="Växla sidofält" // Toggle Sidebar
-            onClick={toggleSidebar}
+            type="button"
+            onClick={() => navigate("/dashboard")}
+            className="flex min-w-0 items-center gap-3 text-left"
           >
-            <input
-              id="checkbox2"
-              type="checkbox"
-              checked={isOpen}
-              readOnly
-              style={{ display: "none" }}
-            />
-            <label className="toggle toggle2" htmlFor="checkbox2">
-              <div id="bar4" className="bars"></div>
-              <div id="bar5" className="bars"></div>
-              <div id="bar6" className="bars"></div>
-            </label>
+            <div
+              className="
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                bg-white
+                shadow-lg
+                shadow-black/10
+              "
+            >
+              <CarFront
+                className="h-5 w-5 text-[#002147]"
+                strokeWidth={2.2}
+              />
+            </div>
+
+            <div className="min-w-0">
+              <div
+                className="
+                  truncate
+                  text-xl
+                  font-bold
+                  leading-none
+                  tracking-tight
+                  text-white
+                "
+              >
+                DealerPro
+              </div>
+
+              <div
+                className="
+                  mt-1
+                  truncate
+                  text-[9px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.16em]
+                  text-blue-200/50
+                "
+              >
+                Dealership Platform
+              </div>
+            </div>
+          </button>
+
+          {/* Mobile Close */}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label="Close sidebar"
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              text-blue-100/70
+              transition-all
+              hover:bg-white/10
+              hover:text-white
+              lg:hidden
+            "
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
-      </div>
 
-      <nav className={`flex-1 ${isOpen || isDesktop ? "mt-3" : "mt-0"}`}>
-        <ul className="w-full flex flex-col gap-1">
-          {(isOpen || isDesktop) &&
-            navItems.map((item) => (
-              <li key={item.name} className="px-3">
+        {/* =================================================
+            NAVIGATION
+        ================================================== */}
+        <nav
+          className="
+            flex-1
+            overflow-y-auto
+            px-3
+            py-5
+            scrollbar-thin
+            scrollbar-thumb-white/10
+            scrollbar-track-transparent
+          "
+        >
+          <div className="mb-3 px-3">
+            <span
+              className="
+                text-[10px]
+                font-bold
+                uppercase
+                tracking-[0.18em]
+                text-blue-200/40
+              "
+            >
+              Main Menu
+            </span>
+          </div>
+
+          <ul className="space-y-1.5">
+            {navItems.map((item) => (
+              <li key={item.name}>
                 <NavLink
                   to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 px-2 rounded-lg py-3 my-1 font-medium text-base cursor-pointer transition-colors border-l-4 ${
+                  end
+                  onClick={handleMobileNavClick}
+                  className={({ isActive }) => `
+                    group
+                    relative
+                    flex
+                    h-11
+                    w-full
+                    items-center
+                    gap-3
+                    rounded-xl
+                    px-3
+                    transition-all
+                    duration-200
+
+                    ${
                       isActive
-                        ? "bg-white text-[#012F7A] border-white"
-                        : "text-blue-100 border-transparent hover:bg-white/10 hover:text-white"
-                    }`
-                  }
-                  end={item.path === "/"}
+                        ? `
+                          bg-white
+                          text-[#002147]
+                          shadow-lg
+                          shadow-black/10
+                        `
+                        : `
+                          text-blue-100/70
+                          hover:bg-white/[0.07]
+                          hover:text-white
+                        `
+                    }
+                  `}
                 >
-                  {item.icon}
-                  <span>{item.name}</span>
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <span
+                          className="
+                            absolute
+                            left-0
+                            top-2.5
+                            h-6
+                            w-1
+                            rounded-r-full
+                            bg-blue-500
+                          "
+                        />
+                      )}
+
+                      <span
+                        className={`
+                          flex
+                          h-8
+                          w-8
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-lg
+                          transition-all
+                          duration-200
+
+                          ${
+                            isActive
+                              ? `
+                                bg-blue-50
+                                text-[#002147]
+                              `
+                              : `
+                                text-blue-200/70
+                                group-hover:bg-white/[0.06]
+                                group-hover:text-white
+                              `
+                          }
+                        `}
+                      >
+                        {item.icon}
+                      </span>
+
+                      <span
+                        className="
+                          min-w-0
+                          flex-1
+                          truncate
+                          text-sm
+                          font-semibold
+                        "
+                      >
+                        {item.name}
+                      </span>
+
+                      {isActive && (
+                        <span
+                          className="
+                            h-1.5
+                            w-1.5
+                            shrink-0
+                            rounded-full
+                            bg-blue-500
+                          "
+                        />
+                      )}
+                    </>
+                  )}
                 </NavLink>
               </li>
             ))}
-        </ul>
-      </nav>
-    </aside>
+          </ul>
+        </nav>
+
+        {/* =================================================
+            BOTTOM AREA
+        ================================================== */}
+        <div
+          className="
+            shrink-0
+            border-t
+            border-white/[0.08]
+            p-3
+          "
+        >
+          {/* =================================================
+              MOBILE THEME TOGGLE
+          ================================================== */}
+         <div
+  className="
+    mb-2
+    lg:hidden
+    rounded-xl
+    border
+    border-white/[0.08]
+    bg-white/[0.045]
+    p-2
+  "
+>
+  <ThemeToggle mobile />
+</div>
+
+          {/* =================================================
+              BACK TO WEBSITE
+          ================================================== */}
+          <button
+            type="button"
+            onClick={handleBackToWebsite}
+            className="
+              group
+              mb-2
+              flex
+              h-10
+              w-full
+              items-center
+              gap-3
+              rounded-xl
+              border
+              border-white/[0.08]
+              bg-white/[0.045]
+              px-3
+              text-blue-100/75
+              transition-all
+              duration-200
+
+              hover:border-blue-400/20
+              hover:bg-white/[0.08]
+              hover:text-white
+            "
+          >
+            <span
+              className="
+                flex
+                h-7
+                w-7
+                shrink-0
+                items-center
+                justify-center
+                rounded-lg
+                bg-white/[0.06]
+                transition
+                group-hover:bg-blue-500/15
+              "
+            >
+              <ArrowLeft
+                size={15}
+                className="
+                  transition-transform
+                  duration-200
+                  group-hover:-translate-x-0.5
+                "
+              />
+            </span>
+
+            <span className="flex-1 text-left text-xs font-semibold">
+              Back to Website
+            </span>
+
+            <ExternalLink
+              size={13}
+              className="
+                text-blue-200/30
+                transition
+                group-hover:text-blue-200/70
+              "
+            />
+          </button>
+
+          {/* =================================================
+              SYSTEM STATUS
+          ================================================== */}
+          <div
+            className="
+              rounded-xl
+              border
+              border-white/[0.07]
+              bg-white/[0.045]
+              p-3
+            "
+          >
+            <div className="flex items-center gap-2.5">
+              <div
+                className="
+                  flex
+                  h-8
+                  w-8
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-emerald-500/10
+                "
+              >
+                <span
+                  className="
+                    h-2
+                    w-2
+                    animate-pulse
+                    rounded-full
+                    bg-emerald-400
+                    shadow-[0_0_8px_rgba(52,211,153,0.7)]
+                  "
+                />
+              </div>
+
+              <div className="min-w-0">
+                <p
+                  className="
+                    text-xs
+                    font-semibold
+                    text-white
+                  "
+                >
+                  System Online
+                </p>
+
+                <p
+                  className="
+                    mt-0.5
+                    truncate
+                    text-[10px]
+                    text-blue-200/40
+                  "
+                >
+                  DealerPro is running normally
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };
 

@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { BackArrowIcon } from "../../components/utils/Icons";
+import {
+  ArrowLeft,
+  FilePenLine,
+  Save,
+  Loader2,
+  ShieldCheck,
+  ClipboardCheck,
+} from "lucide-react";
 import BasicInformation from "../../components/Agreements/addNewAgreement/BasicInformation";
 import TradeVehicle from "../../components/Agreements/addNewAgreement/TradeVehicle";
 import SalesInformation from "../../components/Agreements/addNewAgreement/SalesInformation";
 import VehicleInformation from "../../components/Agreements/addNewAgreement/VehicleInformation";
 import PaymentInformation from "../../components/Agreements/addNewAgreement/PaymentInformation";
 import { makePutRequest } from "../../api/Api";
-import { Loader2 } from "lucide-react";
 import { BACKEND_API_ENDPOINT } from "../../api/config";
 import toast from "react-hot-toast";
 import SalesAgreementPreview from "../../components/Agreements/addNewAgreement/salesAgreement/SalesAgreementPreview";
@@ -21,7 +27,9 @@ const EditPurchaseAgreement = () => {
   const location = useLocation();
   const agreementData = location.state?.agreementData;
 
-  // Initialize form with complete field set matching AddNewPurchaseAgreement
+  // ============================================================
+  // FORM STATE
+  // ============================================================
   const [form, setForm] = useState({
     registrationNumber: agreementData?.registrationNumber || "",
     purchaseDate: agreementData?.purchaseDate || "",
@@ -31,7 +39,8 @@ const EditPurchaseAgreement = () => {
     email: agreementData?.email || "",
     phone: agreementData?.phone || "",
     tradeInVehicle: agreementData?.tradeInVehicle || "",
-    salesPrice: agreementData?.salesPrice || agreementData?.salesPriceSEK || "",
+    salesPrice:
+      agreementData?.salesPrice || agreementData?.salesPriceSEK || "",
     paymentMethod: agreementData?.paymentMethod || "",
     vatType: agreementData?.vatType || "",
     mileage: agreementData?.mileage?.toString() || "",
@@ -69,6 +78,7 @@ const EditPurchaseAgreement = () => {
   });
 
   const [isUpdating, setIsUpdating] = useState(false);
+
   const [searchResults, setSearchResults] = useState<{
     vehicle: any;
     org: SearchResult;
@@ -78,10 +88,14 @@ const EditPurchaseAgreement = () => {
     org: null,
     person: null,
   });
+
   const [formErrors, setFormErrors] = useState({
     registrationNumber: false,
   });
 
+  // ============================================================
+  // PREVIEW
+  // ============================================================
   const preview = {
     ...form,
     ...(searchResults.vehicle?.data?.[0] || {}),
@@ -91,7 +105,9 @@ const EditPurchaseAgreement = () => {
     },
   };
 
-  // Redirect if no agreement data provided
+  // ============================================================
+  // REDIRECT IF NO DATA
+  // ============================================================
   useEffect(() => {
     if (!agreementData) {
       toast.error("No agreement data provided for editing");
@@ -99,26 +115,43 @@ const EditPurchaseAgreement = () => {
     }
   }, [agreementData, navigate]);
 
+  // ============================================================
+  // HANDLE FORM CHANGE
+  // ============================================================
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
+  // ============================================================
+  // PRINT / SAVE
+  // ============================================================
   const handlePrint = async () => {
     await handleUpdateAgreement();
   };
 
+  // ============================================================
+  // VALIDATION
+  // ============================================================
   const validateForm = () => {
     const errors = {
       registrationNumber: !(form.registrationNumber || "").trim(),
     };
+
     setFormErrors(errors);
+
     return !Object.values(errors).some((error) => error);
   };
 
+  // ============================================================
+  // EXTERNAL SEARCH
+  // ============================================================
   const handleSearch = async (
     type: "VEHICLE" | "ORG" | "PERSON",
     query: string
@@ -154,6 +187,7 @@ const EditPurchaseAgreement = () => {
       }));
     } catch (error) {
       console.error(`Error searching ${type}:`, error);
+
       setSearchResults((prev) => ({
         ...prev,
         [type.toLowerCase()]: null,
@@ -161,6 +195,9 @@ const EditPurchaseAgreement = () => {
     }
   };
 
+  // ============================================================
+  // UPDATE AGREEMENT
+  // ============================================================
   const handleUpdateAgreement = async () => {
     if (!validateForm()) {
       toast.error("Please fill in all required fields");
@@ -174,15 +211,15 @@ const EditPurchaseAgreement = () => {
       const vehicle = await getVehicle(form.registrationNumber);
 
       if (!vehicle) {
-        // create a new vehicle if it doesn't exist
         const resp = await createVehicle({
           registrationNumber: form.registrationNumber,
         });
+
         console.log("Vehicle creation response:", resp);
       }
 
       const payload = {
-        id: agreementData.id, // Include the agreement ID for updating
+        id: agreementData.id,
         type: "Purchase Agreement",
         registrationNumber: form.registrationNumber,
         purchaseDate: form.purchaseDate,
@@ -219,10 +256,12 @@ const EditPurchaseAgreement = () => {
         settlementDate: form.settlementDate || null,
         latestServiceDate: form.latestServiceDate || null,
         freeTextMessage: form.freeTextMessage || null,
+
         name:
           searchResults.org?.data?.[0]?.orgName?.name ||
           searchResults.person?.data?.[0]?.name?.names[0] ||
           null,
+
         address: searchResults.org?.data?.[0]?.addresses?.[0]
           ? `${searchResults.org.data[0].addresses[0].street} ${searchResults.org.data[0].addresses[0].number}`
           : searchResults.person?.data?.[0]?.addresses?.[0]
@@ -230,7 +269,6 @@ const EditPurchaseAgreement = () => {
           : null,
       };
 
-      // Use PUT request for updating existing agreement
       const response = await makePutRequest(
         `agreements/updateAgreement/${agreementData.id}`,
         payload
@@ -248,79 +286,217 @@ const EditPurchaseAgreement = () => {
     }
   };
 
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
   if (!agreementData) {
     return (
-      <div className="lg:p-6 p-4 font-plus-jakarta">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <p className="text-gray-600">Loading agreement data...</p>
+      <div className="min-h-[60vh] w-full bg-slate-50 p-4 font-plus-jakarta sm:p-6 dark:bg-[#070d19]">
+        <div className="flex min-h-[50vh] items-center justify-center">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+
+            <p className="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              Loading agreement data...
+            </p>
+
+            <p className="mt-1 text-xs text-slate-400">
+              Please wait while the agreement is being prepared.
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
+  // ============================================================
+  // PAGE
+  // ============================================================
   return (
-    <div className="lg:p-6 p-4 font-plus-jakarta">
-      <div className="flex items-center mb-6">
-        <button
-          className="flex items-center text-gray-600 hover:text-gray-900 cursor-pointer"
-          onClick={() => navigate("/agreements")}
-        >
-          <BackArrowIcon />
-          <span className="ml-2">Redigera köpeavtal #{agreementData.id}</span>
-        </button>
+    <div className="min-h-full w-full bg-slate-50 p-3 font-plus-jakarta sm:p-4 lg:p-6 dark:bg-[#070d19]">
+      {/* ========================================================
+          PAGE HEADER
+      ======================================================== */}
+      <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0b1120]">
+        <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            {/* Back */}
+            <button
+              type="button"
+              onClick={() => navigate("/agreements")}
+              title="Back to agreements"
+              className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-blue-500/30 dark:hover:bg-blue-500/10 dark:hover:text-blue-400"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            </button>
+
+            {/* Icon */}
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+              <FilePenLine className="h-5 w-5" />
+            </div>
+
+            {/* Title */}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="truncate text-lg font-bold tracking-tight text-slate-900 sm:text-xl dark:text-white">
+                  Edit Purchase Agreement
+                </h1>
+
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                  #{agreementData.id}
+                </span>
+              </div>
+
+              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                Update agreement details and review the final document.
+              </p>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="flex w-fit items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <ShieldCheck className="h-4 w-4" />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Editing Mode
+              </p>
+
+              <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                Changes are ready to save
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
-        <div>
+      {/* ========================================================
+          MAIN CONTENT
+      ======================================================== */}
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,0.92fr)] 2xl:gap-6">
+        {/* ======================================================
+            LEFT FORM
+        ====================================================== */}
+        <div className="min-w-0 space-y-5">
           <BasicInformation
             form={form}
             handleChange={handleChange}
             onSearch={handleSearch}
           />
+
           <TradeVehicle
             form={form}
             handleChange={handleChange}
             onSearch={handleSearch}
           />
-          <SalesInformation form={form} handleChange={handleChange} />
-          <VehicleInformation form={form} handleChange={handleChange} />
-          <PaymentInformation form={form} handleChange={handleChange} />
-          <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
-            <button
-              type="button"
-              className="px-6 py-2 border border-blue-900 text-blue-900 rounded-lg cursor-pointer hover:bg-blue-50 flex items-center justify-center"
-              onClick={() => navigate("/agreements")}
-            >
-              Avbryt
-            </button>
-            <button
-              type="button"
-              className="px-6 py-2 bg-gradient-to-b from-[#1F7BF4] to-[#015DD6] text-white rounded-lg cursor-pointer hover:bg-blue-800 flex items-center justify-center"
-              onClick={handleUpdateAgreement}
-              disabled={isUpdating || formErrors.registrationNumber}
-            >
-              {isUpdating ? (
-                <>
-                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                  Uppdaterar...
-                </>
-              ) : (
-                "Uppdatera avtal"
-              )}
-            </button>
+
+          <SalesInformation
+            form={form}
+            handleChange={handleChange}
+          />
+
+          <VehicleInformation
+            form={form}
+            handleChange={handleChange}
+          />
+
+          <PaymentInformation
+            form={form}
+            handleChange={handleChange}
+          />
+
+          {/* ====================================================
+              SAVE SECTION
+          ==================================================== */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-[#0b1120]">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400">
+                <ClipboardCheck className="h-4 w-4" />
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Save Agreement
+                </h3>
+
+                <p className="mt-0.5 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                  Review the information and save your changes when ready.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => navigate("/agreements")}
+                disabled={isUpdating}
+                className="flex min-h-[46px] items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleUpdateAgreement}
+                disabled={
+                  isUpdating || formErrors.registrationNumber
+                }
+                className="flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1F7BF4] to-[#015DD6] px-5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Updating Agreement...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Update Agreement
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
-        <div>
-          <SalesAgreementPreview
-            preview={preview}
-            handlePrint={handlePrint}
-            isCreating={isUpdating}
-            form={form}
-            searchResults={searchResults}
-            searchTradeInVehicle={{ vehicle: null }}
-          />
+
+        {/* ======================================================
+            RIGHT PREVIEW
+        ====================================================== */}
+        <div className="min-w-0 xl:sticky xl:top-5">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0b1120]">
+            {/* Preview Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-5 dark:border-slate-800">
+              <div>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                  Agreement Preview
+                </p>
+
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Live preview of your purchase agreement
+                </p>
+              </div>
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+                <FilePenLine className="h-4 w-4" />
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="p-2 sm:p-3">
+              <SalesAgreementPreview
+                preview={preview}
+                handlePrint={handlePrint}
+                isCreating={isUpdating}
+                form={form}
+                searchResults={searchResults}
+                searchTradeInVehicle={{ vehicle: null }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

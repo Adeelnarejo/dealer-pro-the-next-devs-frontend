@@ -25,7 +25,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen  p-6">
       <div className="max-w-full mx-auto">
         <div className="mb-8">
           <h1 className="text-[28px] font-plus-jakarta font-bold text-[#000814] mb-2">
