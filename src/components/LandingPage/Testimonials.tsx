@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -84,17 +84,46 @@ const cars: Car[] = [
 
 const Testimonials = () => {
   const [activeIndex, setActiveIndex] = useState<number>(2);
+  const [direction, setDirection] = useState<"next" | "prev">("next");
+  const [isChanging, setIsChanging] = useState(false);
+  const [isHoveringCenter, setIsHoveringCenter] = useState(false);
 
   const previousCar = () => {
+    setDirection("prev");
+    setIsChanging(true);
+
     setActiveIndex((current) =>
       current === 0 ? cars.length - 1 : current - 1
     );
+
+    setTimeout(() => {
+      setIsChanging(false);
+    }, 500);
   };
 
   const nextCar = () => {
+    setDirection("next");
+    setIsChanging(true);
+
     setActiveIndex((current) =>
       current === cars.length - 1 ? 0 : current + 1
     );
+
+    setTimeout(() => {
+      setIsChanging(false);
+    }, 500);
+  };
+
+  const selectCar = (index: number) => {
+    if (index === activeIndex) return;
+
+    setDirection(index > activeIndex ? "next" : "prev");
+    setIsChanging(true);
+    setActiveIndex(index);
+
+    setTimeout(() => {
+      setIsChanging(false);
+    }, 500);
   };
 
   const getCar = (offset: number): Car => {
@@ -108,6 +137,18 @@ const Testimonials = () => {
   const leftCar = getCar(-1);
   const rightCar = getCar(1);
 
+  /* =========================================================
+     AUTO RESET ANIMATION STATE
+  ========================================================== */
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsChanging(false);
+    }, 520);
+
+    return () => clearTimeout(timer);
+  }, [activeIndex]);
+
   return (
     <section
       className="
@@ -117,7 +158,7 @@ const Testimonials = () => {
         py-14
         font-plus-jakarta
         transition-colors
-        duration-300
+        duration-500
 
         dark:bg-[#020b16]
 
@@ -133,8 +174,6 @@ const Testimonials = () => {
 
         <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
 
-          {/* Badge */}
-
           <div
             className="
               mb-3
@@ -149,8 +188,11 @@ const Testimonials = () => {
               uppercase
               tracking-[0.16em]
               text-blue-500
-              transition-colors
-              duration-300
+              transition-all
+              duration-500
+              hover:-translate-y-0.5
+              hover:shadow-lg
+              hover:shadow-blue-500/10
 
               dark:bg-blue-500/10
               dark:text-blue-400
@@ -159,16 +201,14 @@ const Testimonials = () => {
             Latest Offers
           </div>
 
-          {/* Heading */}
-
           <h2
             className="
               text-3xl
               font-bold
               tracking-tight
               text-slate-900
-              transition-colors
-              duration-300
+              transition-all
+              duration-500
 
               dark:text-white
 
@@ -179,8 +219,6 @@ const Testimonials = () => {
             Latest Car Rental Offers
           </h2>
 
-          {/* Description */}
-
           <p
             className="
               mx-auto
@@ -190,7 +228,7 @@ const Testimonials = () => {
               leading-4
               text-slate-500
               transition-colors
-              duration-300
+              duration-500
 
               dark:text-slate-400
 
@@ -207,7 +245,7 @@ const Testimonials = () => {
             DESKTOP / TABLET SLIDER
         ===================================================== */}
 
-        <div className="relative hidden h-[330px] items-center md:flex">
+        <div className="relative hidden h-[350px] items-center md:flex">
 
           {/* ===================================================
               LEFT CAR
@@ -215,14 +253,19 @@ const Testimonials = () => {
 
           <div
             className="
+              group
               absolute
               left-[-80px]
               top-1/2
               w-[340px]
               -translate-y-1/2
-              opacity-70
+              opacity-60
               transition-all
-              duration-500
+              duration-700
+              ease-[cubic-bezier(0.22,1,0.36,1)]
+
+              hover:scale-[1.03]
+              hover:opacity-80
 
               lg:left-[-40px]
               lg:w-[390px]
@@ -231,8 +274,16 @@ const Testimonials = () => {
               xl:w-[430px]
             "
           >
-            <div className="relative">
-
+            <div
+              className="
+                relative
+                transition-transform
+                duration-700
+                ease-out
+                group-hover:-translate-x-2
+                group-hover:rotate-[-1deg]
+              "
+            >
               <img
                 src={leftCar.image}
                 alt={leftCar.name}
@@ -240,20 +291,31 @@ const Testimonials = () => {
                   h-[180px]
                   w-full
                   object-contain
-                  drop-shadow-lg
+                  drop-shadow-[0_20px_18px_rgba(15,23,42,0.16)]
+                  transition-all
+                  duration-700
+                  group-hover:scale-105
                   lg:h-[200px]
                 "
               />
 
-              <div className="mt-2 px-3">
-
+              <div
+                className="
+                  mt-2
+                  translate-x-1
+                  px-3
+                  opacity-80
+                  transition-all
+                  duration-500
+                  group-hover:translate-x-3
+                  group-hover:opacity-100
+                "
+              >
                 <p
                   className="
                     text-[8px]
                     font-medium
                     text-slate-500
-                    transition-colors
-                    duration-300
 
                     dark:text-slate-400
                   "
@@ -267,15 +329,12 @@ const Testimonials = () => {
                     text-xs
                     font-semibold
                     text-slate-800
-                    transition-colors
-                    duration-300
 
                     dark:text-slate-200
                   "
                 >
                   {leftCar.name}
                 </h3>
-
               </div>
             </div>
           </div>
@@ -289,13 +348,14 @@ const Testimonials = () => {
             onClick={previousCar}
             aria-label="Previous car"
             className="
+              group
               absolute
               left-[20%]
               top-1/2
               z-30
               flex
-              h-9
-              w-9
+              h-10
+              w-10
               -translate-y-1/2
               items-center
               justify-center
@@ -307,9 +367,16 @@ const Testimonials = () => {
               shadow-sm
               transition-all
               duration-300
+
+              hover:-translate-x-1
+              hover:scale-110
               hover:border-blue-200
               hover:bg-blue-50
               hover:text-blue-600
+              hover:shadow-lg
+              hover:shadow-blue-500/10
+
+              active:scale-95
 
               dark:border-slate-700
               dark:bg-[#0d1b2a]
@@ -321,7 +388,14 @@ const Testimonials = () => {
               lg:left-[25%]
             "
           >
-            <ChevronLeft size={17} />
+            <ChevronLeft
+              size={17}
+              className="
+                transition-transform
+                duration-300
+                group-hover:-translate-x-0.5
+              "
+            />
           </button>
 
           {/* ===================================================
@@ -341,25 +415,63 @@ const Testimonials = () => {
               sm:w-[400px]
               lg:w-[440px]
             "
+            style={{
+              perspective: "1200px",
+            }}
+            onMouseEnter={() => setIsHoveringCenter(true)}
+            onMouseLeave={() => setIsHoveringCenter(false)}
           >
             <div
-              className="
+              className={`
+                relative
                 overflow-hidden
                 rounded-xl
                 border
                 border-slate-200
                 bg-white
-                shadow-[0_15px_45px_rgba(15,23,42,0.08)]
-                transition-colors
-                duration-300
+                shadow-[0_20px_55px_rgba(15,23,42,0.10)]
+                transition-all
+                duration-500
+                ease-out
 
                 dark:border-slate-700/70
                 dark:bg-[#0b1a2b]
-                dark:shadow-[0_15px_45px_rgba(0,0,0,0.35)]
-              "
-            >
+                dark:shadow-[0_20px_55px_rgba(0,0,0,0.38)]
 
-              {/* Car Image */}
+                ${
+                  isHoveringCenter
+                    ? "rotate-x-[1deg] rotate-y-[-2deg] -translate-y-1 shadow-[0_28px_70px_rgba(15,23,42,0.16)] dark:shadow-[0_28px_70px_rgba(0,0,0,0.48)]"
+                    : ""
+                }
+              `}
+              style={{
+                transformStyle: "preserve-3d",
+              }}
+            >
+              {/* BLUE TOP LIGHT */}
+
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  left-1/2
+                  top-0
+                  z-30
+                  h-[2px]
+                  w-1/2
+                  -translate-x-1/2
+                  bg-gradient-to-r
+                  from-transparent
+                  via-blue-500
+                  to-transparent
+                  opacity-60
+                  blur-[1px]
+                "
+              />
+
+              {/* =================================================
+                  CAR IMAGE
+              ================================================= */}
 
               <div
                 className="
@@ -368,28 +480,68 @@ const Testimonials = () => {
                   h-[175px]
                   items-center
                   justify-center
+                  overflow-hidden
                   bg-[#f8fafc]
                   px-4
-                  transition-colors
-                  duration-300
 
                   dark:bg-[#101f33]
 
                   sm:h-[190px]
                 "
               >
+                {/* Glow */}
 
-                <img
-                  src={centerCar.image}
-                  alt={centerCar.name}
+                <div
                   className="
-                    h-full
-                    w-full
-                    object-contain
+                    pointer-events-none
+                    absolute
+                    left-1/2
+                    top-1/2
+                    h-32
+                    w-32
+                    -translate-x-1/2
+                    -translate-y-1/2
+                    rounded-full
+                    bg-blue-400/10
+                    blur-3xl
                     transition-all
-                    duration-500
+                    duration-700
+                    group-hover:scale-150
                   "
                 />
+
+                {/* Animated car */}
+
+                <div
+                  key={centerCar.id}
+                  className={`
+                    relative
+                    z-10
+                    h-full
+                    w-full
+                    ${
+                      isChanging
+                        ? direction === "next"
+                          ? "animate-[carSlideNext_500ms_cubic-bezier(0.22,1,0.36,1)]"
+                          : "animate-[carSlidePrev_500ms_cubic-bezier(0.22,1,0.36,1)]"
+                        : "animate-[carFloat_4s_ease-in-out_infinite]"
+                    }
+                  `}
+                >
+                  <img
+                    src={centerCar.image}
+                    alt={centerCar.name}
+                    className="
+                      h-full
+                      w-full
+                      object-contain
+                      drop-shadow-[0_18px_18px_rgba(15,23,42,0.18)]
+                      transition-transform
+                      duration-500
+                      hover:scale-[1.04]
+                    "
+                  />
+                </div>
 
                 {/* Image arrows */}
 
@@ -398,29 +550,45 @@ const Testimonials = () => {
                   onClick={previousCar}
                   aria-label="Previous"
                   className="
+                    group/arrow
                     absolute
                     left-3
+                    z-20
                     flex
-                    h-7
-                    w-7
+                    h-8
+                    w-8
                     items-center
                     justify-center
                     rounded-full
-                    bg-white
+                    border
+                    border-slate-100
+                    bg-white/90
                     text-slate-500
                     shadow-sm
+                    backdrop-blur-md
                     transition-all
                     duration-300
+
+                    hover:scale-110
+                    hover:border-blue-200
                     hover:bg-blue-50
                     hover:text-blue-600
+                    hover:shadow-md
 
-                    dark:bg-[#17283d]
+                    active:scale-90
+
+                    dark:border-slate-600
+                    dark:bg-[#17283d]/90
                     dark:text-slate-300
+                    dark:hover:border-blue-500/50
                     dark:hover:bg-blue-500/10
                     dark:hover:text-blue-400
                   "
                 >
-                  <ChevronLeft size={14} />
+                  <ChevronLeft
+                    size={14}
+                    className="transition-transform duration-300 group-hover/arrow:-translate-x-0.5"
+                  />
                 </button>
 
                 <button
@@ -428,59 +596,67 @@ const Testimonials = () => {
                   onClick={nextCar}
                   aria-label="Next"
                   className="
+                    group/arrow
                     absolute
                     right-3
+                    z-20
                     flex
-                    h-7
-                    w-7
+                    h-8
+                    w-8
                     items-center
                     justify-center
                     rounded-full
-                    bg-white
+                    border
+                    border-slate-100
+                    bg-white/90
                     text-slate-500
                     shadow-sm
+                    backdrop-blur-md
                     transition-all
                     duration-300
+
+                    hover:scale-110
+                    hover:border-blue-200
                     hover:bg-blue-50
                     hover:text-blue-600
+                    hover:shadow-md
 
-                    dark:bg-[#17283d]
+                    active:scale-90
+
+                    dark:border-slate-600
+                    dark:bg-[#17283d]/90
                     dark:text-slate-300
+                    dark:hover:border-blue-500/50
                     dark:hover:bg-blue-500/10
                     dark:hover:text-blue-400
                   "
                 >
-                  <ChevronRight size={14} />
+                  <ChevronRight
+                    size={14}
+                    className="transition-transform duration-300 group-hover/arrow:translate-x-0.5"
+                  />
                 </button>
-
               </div>
 
-              {/* Details */}
+              {/* =================================================
+                  DETAILS
+              ================================================= */}
 
               <div
+                key={`details-${centerCar.id}`}
                 className="
                   border-t
                   border-slate-100
                   px-5
                   py-4
-                  transition-colors
-                  duration-300
+                  animate-[detailsIn_450ms_ease-out]
 
                   dark:border-slate-700/70
                 "
               >
-
                 <div className="flex items-start justify-between gap-4">
-
                   <div>
-
-                    <p
-                      className="
-                        text-[9px]
-                        font-medium
-                        text-slate-400
-                      "
-                    >
+                    <p className="text-[9px] font-medium text-slate-400">
                       {centerCar.type}
                     </p>
 
@@ -490,8 +666,6 @@ const Testimonials = () => {
                         text-sm
                         font-bold
                         text-slate-900
-                        transition-colors
-                        duration-300
 
                         dark:text-white
 
@@ -500,11 +674,9 @@ const Testimonials = () => {
                     >
                       {centerCar.name}
                     </h3>
-
                   </div>
 
                   <div className="text-right">
-
                     <p className="text-[9px] text-slate-400">
                       From
                     </p>
@@ -514,8 +686,6 @@ const Testimonials = () => {
                         text-sm
                         font-bold
                         text-slate-900
-                        transition-colors
-                        duration-300
 
                         dark:text-white
                       "
@@ -526,12 +696,8 @@ const Testimonials = () => {
                         /day
                       </span>
                     </p>
-
                   </div>
-
                 </div>
-
-                {/* Bottom information */}
 
                 <div
                   className="
@@ -544,89 +710,39 @@ const Testimonials = () => {
                     border-t
                     border-slate-100
                     pt-3
-                    transition-colors
-                    duration-300
 
                     dark:border-slate-700/70
                   "
                 >
+                  <InfoItem
+                    icon={<Users size={11} />}
+                    text={`${centerCar.seats} Seats`}
+                  />
 
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-1.5
-                      text-[9px]
-                      text-slate-500
-                      transition-colors
-                      duration-300
+                  <InfoItem
+                    icon={<Gauge size={11} />}
+                    text={centerCar.mileage}
+                  />
 
-                      dark:text-slate-400
-                    "
-                  >
-                    <Users size={11} />
-                    {centerCar.seats} Seats
-                  </div>
+                  <InfoItem
+                    icon={<MapPin size={11} />}
+                    text={centerCar.location}
+                  />
 
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-1.5
-                      text-[9px]
-                      text-slate-500
-                      transition-colors
-                      duration-300
-
-                      dark:text-slate-400
-                    "
-                  >
-                    <Gauge size={11} />
-                    {centerCar.mileage}
-                  </div>
-
-                  <div
-                    className="
-                      flex
-                      items-center
-                      gap-1.5
-                      text-[9px]
-                      text-slate-500
-                      transition-colors
-                      duration-300
-
-                      dark:text-slate-400
-                    "
-                  >
-                    <MapPin size={11} />
-                    {centerCar.location}
-                  </div>
-
-                  <div
-                    className="
-                      ml-auto
-                      text-[9px]
-                      text-slate-400
-                    "
-                  >
+                  <div className="ml-auto text-[9px] text-slate-400">
                     From{" "}
-
                     <span
                       className="
                         font-bold
                         text-slate-800
-                        transition-colors
-                        duration-300
 
                         dark:text-slate-200
                       "
                     >
                       {centerCar.monthlyPrice}
                     </span>
-
                     /month
                   </div>
-
                 </div>
               </div>
             </div>
@@ -638,14 +754,19 @@ const Testimonials = () => {
 
           <div
             className="
+              group
               absolute
               right-[-80px]
               top-1/2
               w-[340px]
               -translate-y-1/2
-              opacity-70
+              opacity-60
               transition-all
-              duration-500
+              duration-700
+              ease-[cubic-bezier(0.22,1,0.36,1)]
+
+              hover:scale-[1.03]
+              hover:opacity-80
 
               lg:right-[-40px]
               lg:w-[390px]
@@ -654,8 +775,16 @@ const Testimonials = () => {
               xl:w-[430px]
             "
           >
-            <div className="relative">
-
+            <div
+              className="
+                relative
+                transition-transform
+                duration-700
+                ease-out
+                group-hover:translate-x-2
+                group-hover:rotate-[1deg]
+              "
+            >
               <img
                 src={rightCar.image}
                 alt={rightCar.name}
@@ -663,20 +792,30 @@ const Testimonials = () => {
                   h-[180px]
                   w-full
                   object-contain
-                  drop-shadow-lg
+                  drop-shadow-[0_20px_18px_rgba(15,23,42,0.16)]
+                  transition-all
+                  duration-700
+                  group-hover:scale-105
                   lg:h-[200px]
                 "
               />
 
-              <div className="mt-2 px-3">
-
+              <div
+                className="
+                  mt-2
+                  px-3
+                  opacity-80
+                  transition-all
+                  duration-500
+                  group-hover:translate-x-[-6px]
+                  group-hover:opacity-100
+                "
+              >
                 <p
                   className="
                     text-[8px]
                     font-medium
                     text-slate-500
-                    transition-colors
-                    duration-300
 
                     dark:text-slate-400
                   "
@@ -690,15 +829,12 @@ const Testimonials = () => {
                     text-xs
                     font-semibold
                     text-slate-800
-                    transition-colors
-                    duration-300
 
                     dark:text-slate-200
                   "
                 >
                   {rightCar.name}
                 </h3>
-
               </div>
             </div>
           </div>
@@ -712,13 +848,14 @@ const Testimonials = () => {
             onClick={nextCar}
             aria-label="Next car"
             className="
+              group
               absolute
               right-[20%]
               top-1/2
               z-30
               flex
-              h-9
-              w-9
+              h-10
+              w-10
               -translate-y-1/2
               items-center
               justify-center
@@ -730,9 +867,16 @@ const Testimonials = () => {
               shadow-sm
               transition-all
               duration-300
+
+              hover:translate-x-1
+              hover:scale-110
               hover:border-blue-200
               hover:bg-blue-50
               hover:text-blue-600
+              hover:shadow-lg
+              hover:shadow-blue-500/10
+
+              active:scale-95
 
               dark:border-slate-700
               dark:bg-[#0d1b2a]
@@ -744,9 +888,15 @@ const Testimonials = () => {
               lg:right-[25%]
             "
           >
-            <ChevronRight size={17} />
+            <ChevronRight
+              size={17}
+              className="
+                transition-transform
+                duration-300
+                group-hover:translate-x-0.5
+              "
+            />
           </button>
-
         </div>
 
         {/* =====================================================
@@ -754,9 +904,9 @@ const Testimonials = () => {
         ===================================================== */}
 
         <div className="md:hidden">
-
           <div
             className="
+              group/mobile
               relative
               overflow-hidden
               rounded-2xl
@@ -764,16 +914,18 @@ const Testimonials = () => {
               border-slate-200
               bg-white
               shadow-sm
-              transition-colors
-              duration-300
+              transition-all
+              duration-500
+              hover:-translate-y-1
+              hover:shadow-xl
+              hover:shadow-slate-900/10
 
               dark:border-slate-700/70
               dark:bg-[#0b1a2b]
               dark:shadow-black/30
             "
           >
-
-            {/* Image */}
+            {/* IMAGE */}
 
             <div
               className="
@@ -782,105 +934,160 @@ const Testimonials = () => {
                 h-[210px]
                 items-center
                 justify-center
+                overflow-hidden
                 bg-[#f8fafc]
                 p-4
-                transition-colors
-                duration-300
 
                 dark:bg-[#101f33]
               "
             >
+              {/* Glow */}
 
-              <img
-                src={centerCar.image}
-                alt={centerCar.name}
-                className="h-full w-full object-contain"
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  left-1/2
+                  top-1/2
+                  h-40
+                  w-40
+                  -translate-x-1/2
+                  -translate-y-1/2
+                  rounded-full
+                  bg-blue-400/10
+                  blur-3xl
+                "
               />
 
-              {/* Previous */}
+              <div
+                key={`mobile-${centerCar.id}`}
+                className={`
+                  relative
+                  z-10
+                  h-full
+                  w-full
+
+                  ${
+                    isChanging
+                      ? direction === "next"
+                        ? "animate-[carSlideNext_500ms_cubic-bezier(0.22,1,0.36,1)]"
+                        : "animate-[carSlidePrev_500ms_cubic-bezier(0.22,1,0.36,1)]"
+                      : "animate-[carFloat_4s_ease-in-out_infinite]"
+                  }
+                `}
+              >
+                <img
+                  src={centerCar.image}
+                  alt={centerCar.name}
+                  className="
+                    h-full
+                    w-full
+                    object-contain
+                    drop-shadow-[0_20px_20px_rgba(15,23,42,0.18)]
+                  "
+                />
+              </div>
+
+              {/* PREVIOUS */}
 
               <button
                 type="button"
                 onClick={previousCar}
                 aria-label="Previous car"
                 className="
+                  group/arrow
                   absolute
                   left-3
+                  z-20
                   flex
                   h-8
                   w-8
                   items-center
                   justify-center
                   rounded-full
-                  bg-white
+                  bg-white/95
                   text-slate-500
-                  shadow-sm
+                  shadow-md
+                  backdrop-blur-md
                   transition-all
                   duration-300
+
+                  hover:scale-110
                   hover:bg-blue-50
                   hover:text-blue-600
 
-                  dark:bg-[#17283d]
+                  active:scale-90
+
+                  dark:bg-[#17283d]/95
                   dark:text-slate-300
                   dark:hover:bg-blue-500/10
                   dark:hover:text-blue-400
                 "
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft
+                  size={16}
+                  className="transition-transform duration-300 group-hover/arrow:-translate-x-0.5"
+                />
               </button>
 
-              {/* Next */}
+              {/* NEXT */}
 
               <button
                 type="button"
                 onClick={nextCar}
                 aria-label="Next car"
                 className="
+                  group/arrow
                   absolute
                   right-3
+                  z-20
                   flex
                   h-8
                   w-8
                   items-center
                   justify-center
                   rounded-full
-                  bg-white
+                  bg-white/95
                   text-slate-500
-                  shadow-sm
+                  shadow-md
+                  backdrop-blur-md
                   transition-all
                   duration-300
+
+                  hover:scale-110
                   hover:bg-blue-50
                   hover:text-blue-600
 
-                  dark:bg-[#17283d]
+                  active:scale-90
+
+                  dark:bg-[#17283d]/95
                   dark:text-slate-300
                   dark:hover:bg-blue-500/10
                   dark:hover:text-blue-400
                 "
               >
-                <ChevronRight size={16} />
+                <ChevronRight
+                  size={16}
+                  className="transition-transform duration-300 group-hover/arrow:translate-x-0.5"
+                />
               </button>
-
             </div>
 
-            {/* Details */}
+            {/* DETAILS */}
 
             <div
+              key={`mobile-details-${centerCar.id}`}
               className="
                 border-t
                 border-slate-100
                 p-4
-                transition-colors
-                duration-300
+                animate-[detailsIn_450ms_ease-out]
 
                 dark:border-slate-700/70
               "
             >
-
               <div className="flex items-start justify-between">
-
                 <div>
-
                   <p className="text-[9px] text-slate-400">
                     {centerCar.type}
                   </p>
@@ -891,19 +1098,15 @@ const Testimonials = () => {
                       text-base
                       font-bold
                       text-slate-900
-                      transition-colors
-                      duration-300
 
                       dark:text-white
                     "
                   >
                     {centerCar.name}
                   </h3>
-
                 </div>
 
                 <div className="text-right">
-
                   <p className="text-[9px] text-slate-400">
                     From
                   </p>
@@ -912,8 +1115,6 @@ const Testimonials = () => {
                     className="
                       font-bold
                       text-slate-900
-                      transition-colors
-                      duration-300
 
                       dark:text-white
                     "
@@ -924,9 +1125,7 @@ const Testimonials = () => {
                       /day
                     </span>
                   </p>
-
                 </div>
-
               </div>
 
               <div
@@ -938,64 +1137,24 @@ const Testimonials = () => {
                   border-t
                   border-slate-100
                   pt-3
-                  transition-colors
-                  duration-300
 
                   dark:border-slate-700/70
                 "
               >
+                <InfoItem
+                  icon={<Users size={11} />}
+                  text={`${centerCar.seats} Seats`}
+                />
 
-                <span
-                  className="
-                    flex
-                    items-center
-                    gap-1
-                    text-[9px]
-                    text-slate-500
-                    transition-colors
-                    duration-300
+                <InfoItem
+                  icon={<Gauge size={11} />}
+                  text={centerCar.mileage}
+                />
 
-                    dark:text-slate-400
-                  "
-                >
-                  <Users size={11} />
-                  {centerCar.seats} Seats
-                </span>
-
-                <span
-                  className="
-                    flex
-                    items-center
-                    gap-1
-                    text-[9px]
-                    text-slate-500
-                    transition-colors
-                    duration-300
-
-                    dark:text-slate-400
-                  "
-                >
-                  <Gauge size={11} />
-                  {centerCar.mileage}
-                </span>
-
-                <span
-                  className="
-                    flex
-                    items-center
-                    gap-1
-                    text-[9px]
-                    text-slate-500
-                    transition-colors
-                    duration-300
-
-                    dark:text-slate-400
-                  "
-                >
-                  <MapPin size={11} />
-                  {centerCar.location}
-                </span>
-
+                <InfoItem
+                  icon={<MapPin size={11} />}
+                  text={centerCar.location}
+                />
               </div>
 
               <div
@@ -1012,27 +1171,22 @@ const Testimonials = () => {
                   className="
                     font-bold
                     text-slate-800
-                    transition-colors
-                    duration-300
 
                     dark:text-slate-200
                   "
                 >
                   {centerCar.monthlyPrice}
                 </span>
-
               </div>
-
             </div>
           </div>
         </div>
 
         {/* =====================================================
-            SLIDER DOTS
+            DOTS
         ===================================================== */}
 
         <div className="mt-7 flex justify-center gap-1.5">
-
           {cars.map((car, index) => {
             const isActive = index === activeIndex;
 
@@ -1041,27 +1195,171 @@ const Testimonials = () => {
                 key={car.id}
                 type="button"
                 aria-label={`Go to ${car.name}`}
-                onClick={() => setActiveIndex(index)}
+                onClick={() => selectCar(index)}
                 className={`
+                  relative
                   h-1.5
                   rounded-full
                   transition-all
-                  duration-300
+                  duration-500
+                  ease-out
 
                   ${
                     isActive
-                      ? "w-6 bg-blue-600"
-                      : "w-1.5 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
+                      ? "w-8 bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.45)]"
+                      : "w-1.5 bg-slate-300 hover:w-3 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-600"
                   }
                 `}
-              />
+              >
+                {isActive && (
+                  <span
+                    className="
+                      absolute
+                      inset-0
+                      animate-pulse
+                      rounded-full
+                      bg-blue-400
+                      opacity-40
+                    "
+                  />
+                )}
+              </button>
             );
           })}
-
         </div>
-
       </div>
+
+      {/* =========================================================
+          CUSTOM ANIMATIONS
+      ========================================================== */}
+
+      <style>
+        {`
+          @keyframes carSlideNext {
+            0% {
+              opacity: 0;
+              transform:
+                translate3d(55px, 0, 0)
+                scale(0.88)
+                rotateY(-10deg);
+              filter: blur(5px);
+            }
+
+            55% {
+              opacity: 1;
+              transform:
+                translate3d(-5px, 0, 0)
+                scale(1.03)
+                rotateY(2deg);
+              filter: blur(0);
+            }
+
+            100% {
+              opacity: 1;
+              transform:
+                translate3d(0, 0, 0)
+                scale(1)
+                rotateY(0);
+            }
+          }
+
+          @keyframes carSlidePrev {
+            0% {
+              opacity: 0;
+              transform:
+                translate3d(-55px, 0, 0)
+                scale(0.88)
+                rotateY(10deg);
+              filter: blur(5px);
+            }
+
+            55% {
+              opacity: 1;
+              transform:
+                translate3d(5px, 0, 0)
+                scale(1.03)
+                rotateY(-2deg);
+              filter: blur(0);
+            }
+
+            100% {
+              opacity: 1;
+              transform:
+                translate3d(0, 0, 0)
+                scale(1)
+                rotateY(0);
+            }
+          }
+
+          @keyframes carFloat {
+            0%,
+            100% {
+              transform: translateY(0);
+            }
+
+            50% {
+              transform: translateY(-5px);
+            }
+          }
+
+          @keyframes detailsIn {
+            0% {
+              opacity: 0;
+              transform: translateY(8px);
+            }
+
+            100% {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            [class*="animate-[carSlide"],
+            [class*="animate-[carFloat"],
+            [class*="animate-[detailsIn"] {
+              animation: none !important;
+            }
+          }
+        `}
+      </style>
     </section>
+  );
+};
+
+/* =========================================================
+   INFO ITEM
+========================================================= */
+
+const InfoItem = ({
+  icon,
+  text,
+}: {
+  icon: React.ReactNode;
+  text: string;
+}) => {
+  return (
+    <div
+      className="
+        flex
+        items-center
+        gap-1.5
+        text-[9px]
+        text-slate-500
+        transition-all
+        duration-300
+        hover:-translate-y-0.5
+        hover:text-blue-500
+
+        dark:text-slate-400
+      "
+    >
+      <span className="text-blue-500">
+        {icon}
+      </span>
+
+      {text}
+    </div>
   );
 };
 

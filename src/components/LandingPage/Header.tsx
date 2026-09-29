@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Menu,
   X,
-  ChevronDown,
   ArrowRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +16,7 @@ const Header = () => {
   // =========================================================
   // CHECK LOGIN STATUS
   // =========================================================
+
   const checkAuth = () => {
     const token = sessionStorage.getItem("token");
 
@@ -28,7 +28,6 @@ const Header = () => {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
 
-      // Token expired
       if (
         payload.exp &&
         payload.exp * 1000 <= Date.now()
@@ -51,6 +50,7 @@ const Header = () => {
   // =========================================================
   // AUTH LISTENER
   // =========================================================
+
   useEffect(() => {
     checkAuth();
 
@@ -84,6 +84,7 @@ const Header = () => {
   // =========================================================
   // NAVIGATION
   // =========================================================
+
   const goToPage = (path: string) => {
     setIsMenuOpen(false);
     navigate(path);
@@ -92,6 +93,7 @@ const Header = () => {
   // =========================================================
   // LOGIN / DASHBOARD
   // =========================================================
+
   const handleAuthButton = () => {
     setIsMenuOpen(false);
 
@@ -103,377 +105,445 @@ const Header = () => {
   };
 
   return (
-    <header className="absolute left-0 right-0 top-0 z-50 px-5 pt-5 sm:px-8 lg:px-12 lg:pt-6">
-      <div className="mx-auto flex max-w-7xl items-center justify-between">
+    <>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-        {/* =====================================================
-            LOGO
-        ===================================================== */}
-        <button
-          type="button"
-          onClick={() => goToPage("/")}
-          className="group flex items-center"
-        >
-          <span className="text-xl font-extrabold tracking-[-0.04em] text-white drop-shadow-sm transition-colors sm:text-2xl">
-            Dealer
-            <span className="text-blue-100">
-              Pro
+      <header className="fixed left-0 right-0 top-0 z-[100] px-4 pt-4 sm:px-6 sm:pt-5 lg:px-10">
+
+        <div className="mx-auto flex max-w-[1450px] items-center justify-between">
+
+          {/* =================================================
+              LOGO
+          ================================================= */}
+
+          <button
+            type="button"
+            onClick={() => goToPage("/")}
+            className="group relative flex items-center"
+          >
+            {/* glow */}
+
+            <span className="pointer-events-none absolute -inset-3 rounded-full bg-blue-500/10 opacity-0 blur-xl transition duration-500 group-hover:opacity-100" />
+
+            <span className="relative text-[21px] font-extrabold tracking-[-0.055em] text-white drop-shadow-lg sm:text-2xl">
+
+              Dealer
+              <span className="text-blue-400">
+                Pro
+              </span>
+
             </span>
-          </span>
-        </button>
+          </button>
 
-        {/* =====================================================
-            DESKTOP NAVIGATION
-        ===================================================== */}
-        <div
-          className="
-            hidden
-            items-center
-            rounded-full
-            bg-white
-            p-1.5
-            shadow-xl
-            shadow-slate-900/10
-            transition-colors
-            md:flex
-            dark:bg-[#0d1b2d]
-            dark:shadow-black/30
-          "
-        >
-          <nav className="flex items-center">
+          {/* =================================================
+              DESKTOP NAV
+          ================================================= */}
 
-            {/* INVENTORY */}
-            <button
-              type="button"
-              onClick={() => goToPage("/inventory")}
-              className="
-                rounded-full
-                px-5
-                py-3
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-wide
-                text-slate-700
-                transition
-                hover:bg-slate-100
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-              "
-            >
-              Inventory
-            </button>
+          <div
+            className="
+              hidden
+              md:flex
+              items-center
+              rounded-full
+              border
+              border-white/15
+              bg-white/[0.075]
+              p-1.5
+              shadow-[0_15px_50px_rgba(0,0,0,0.22)]
+              backdrop-blur-2xl
+              backdrop-saturate-150
+            "
+          >
 
-            {/* DEALERSHIPS */}
-            <button
-              type="button"
-              onClick={() => goToPage("/dealerships")}
-              className="
-                rounded-full
-                px-5
-                py-3
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-wide
-                text-slate-700
-                transition
-                hover:bg-slate-100
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-              "
-            >
-              Dealerships
-            </button>
+            <nav className="flex items-center">
 
-            {/* FEATURES */}
-            <button
-              type="button"
-              onClick={() => goToPage("/features")}
-              className="
-                rounded-full
-                px-5
-                py-3
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-wide
-                text-slate-700
-                transition
-                hover:bg-slate-100
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-              "
-            >
-              Features
-            </button>
+              {/* INVENTORY */}
 
-            {/* SERVICES */}
-            <button
-              type="button"
-              onClick={() => goToPage("/services")}
-              className="
-                rounded-full
-                px-5
-                py-3
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-wide
-                text-slate-700
-                transition
-                hover:bg-slate-100
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-              "
-            >
-              Services
-            </button>
+              <NavButton
+                label="Inventory"
+                onClick={() => goToPage("/inventory")}
+              />
 
-            {/* MORE */}
-            <button
-              type="button"
-              className="
-                flex
-                items-center
-                gap-1
-                rounded-full
-                px-4
-                py-3
-                text-[11px]
-                font-semibold
-                uppercase
-                tracking-wide
-                text-slate-700
-                transition
-                hover:bg-slate-100
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-              "
-            >
-              More
-              <ChevronDown size={13} />
-            </button>
+              {/* DEALERSHIPS */}
 
-            {/* =================================================
-                LOGIN / DASHBOARD
-            ================================================= */}
-            <button
-              type="button"
-              onClick={handleAuthButton}
-              className="
-                ml-1
-                rounded-full
-                bg-blue-600
-                px-6
-                py-3
-                text-[11px]
-                font-bold
-                uppercase
-                tracking-wide
-                text-white
-                transition
-                hover:bg-blue-700
-              "
-            >
-              {isLoggedIn ? "Dashboard" : "Login"}
-            </button>
+              <NavButton
+                label="Dealerships"
+                onClick={() => goToPage("/dealerships")}
+              />
 
-          </nav>
+              {/* FEATURES */}
+
+              <NavButton
+                label="Features"
+                onClick={() => goToPage("/features")}
+              />
+
+              {/* SERVICES */}
+
+              <NavButton
+                label="Services"
+                onClick={() => goToPage("/services")}
+              />
+
+              {/* LOGIN */}
+
+              <button
+                type="button"
+                onClick={handleAuthButton}
+                className="
+                  group
+                  ml-1
+                  flex
+                  items-center
+                  gap-2
+                  rounded-full
+                  bg-blue-600
+                  px-5
+                  py-2.5
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.08em]
+                  text-white
+                  shadow-[0_6px_25px_rgba(37,99,235,0.35)]
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:bg-blue-500
+                  hover:shadow-[0_10px_30px_rgba(37,99,235,0.45)]
+                  active:translate-y-0
+                "
+              >
+                {isLoggedIn ? "Dashboard" : "Login"}
+
+                <ArrowRight
+                  size={14}
+                  className="
+                    transition-transform
+                    duration-300
+                    group-hover:translate-x-0.5
+                  "
+                />
+              </button>
+
+            </nav>
+          </div>
+
+          {/* =================================================
+              MOBILE BUTTON
+          ================================================= */}
+
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((value) => !value)}
+            aria-label="Toggle menu"
+            aria-expanded={isMenuOpen}
+            className="
+              group
+              flex
+              h-11
+              w-11
+              items-center
+              justify-center
+              rounded-full
+              border
+              border-white/15
+              bg-white/[0.09]
+              text-white
+              shadow-[0_10px_35px_rgba(0,0,0,0.25)]
+              backdrop-blur-2xl
+              transition-all
+              duration-300
+              hover:border-blue-400/40
+              hover:bg-white/[0.14]
+              md:hidden
+            "
+          >
+            {isMenuOpen ? (
+              <X
+                size={19}
+                className="transition-transform duration-300 group-hover:rotate-90"
+              />
+            ) : (
+              <Menu
+                size={20}
+                className="transition-transform duration-300 group-hover:scale-110"
+              />
+            )}
+          </button>
+
         </div>
 
         {/* =====================================================
-            MOBILE MENU BUTTON
+            MOBILE MENU
         ===================================================== */}
-        <button
-          type="button"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="
-            flex
-            h-11
-            w-11
-            items-center
-            justify-center
-            rounded-full
-            bg-white
-            text-slate-800
-            shadow-lg
-            transition
-            hover:bg-slate-100
-            md:hidden
-            dark:bg-[#0d1b2d]
-            dark:text-slate-100
-            dark:shadow-black/30
-            dark:hover:bg-[#172b44]
-          "
-          aria-label="Toggle menu"
-          aria-expanded={isMenuOpen}
-        >
-          {isMenuOpen ? (
-            <X size={20} />
-          ) : (
-            <Menu size={20} />
-          )}
-        </button>
 
-      </div>
-
-      {/* =====================================================
-          MOBILE DROPDOWN
-      ===================================================== */}
-      {isMenuOpen && (
         <div
-          className="
+          className={`
             mx-auto
             mt-3
             max-w-md
-            rounded-3xl
-            bg-white
-            p-3
-            shadow-2xl
-            transition-colors
+            overflow-hidden
+            rounded-[26px]
+            border
+            border-white/15
+            bg-black/45
+            shadow-[0_25px_80px_rgba(0,0,0,0.35)]
+            backdrop-blur-2xl
+            backdrop-saturate-150
+            transition-all
+            duration-500
             md:hidden
-            dark:bg-[#0d1b2d]
-            dark:shadow-black/40
-          "
+            ${
+              isMenuOpen
+                ? "visible translate-y-0 opacity-100"
+                : "invisible -translate-y-3 opacity-0"
+            }
+          `}
         >
-          <nav className="flex flex-col gap-1">
 
-            {/* INVENTORY */}
-            <button
-              type="button"
-              onClick={() => goToPage("/inventory")}
-              className="
-                w-full
-                rounded-2xl
-                px-4
-                py-3
-                text-left
-                text-sm
-                font-semibold
-                text-slate-700
-                transition
-                hover:bg-blue-50
-                hover:text-blue-600
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-                dark:hover:text-blue-400
-              "
-            >
-              Inventory
-            </button>
+          <div className="p-2.5">
 
-            {/* DEALERSHIPS */}
-            <button
-              type="button"
-              onClick={() => goToPage("/dealerships")}
-              className="
-                w-full
-                rounded-2xl
-                px-4
-                py-3
-                text-left
-                text-sm
-                font-semibold
-                text-slate-700
-                transition
-                hover:bg-blue-50
-                hover:text-blue-600
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-                dark:hover:text-blue-400
-              "
-            >
-              Dealerships
-            </button>
+            {/* top glow */}
 
-            {/* FEATURES */}
-            <button
-              type="button"
-              onClick={() => goToPage("/features")}
-              className="
-                w-full
-                rounded-2xl
-                px-4
-                py-3
-                text-left
-                text-sm
-                font-semibold
-                text-slate-700
-                transition
-                hover:bg-blue-50
-                hover:text-blue-600
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-                dark:hover:text-blue-400
-              "
-            >
-              Features
-            </button>
+            <div className="pointer-events-none absolute h-20 w-40 rounded-full bg-blue-500/10 blur-3xl" />
 
-            {/* SERVICES */}
-            <button
-              type="button"
-              onClick={() => goToPage("/services")}
-              className="
-                w-full
-                rounded-2xl
-                px-4
-                py-3
-                text-left
-                text-sm
-                font-semibold
-                text-slate-700
-                transition
-                hover:bg-blue-50
-                hover:text-blue-600
-                dark:text-slate-200
-                dark:hover:bg-[#172b44]
-                dark:hover:text-blue-400
-              "
-            >
-              Services
-            </button>
+            <nav className="relative flex flex-col gap-1">
 
-            {/* =================================================
-                MOBILE THEME TOGGLE
-            ================================================= */}
-            <div className="mt-2">
-              <ThemeToggle mobile />
-            </div>
+              {/* INVENTORY */}
 
-            {/* =================================================
-                LOGIN / DASHBOARD - MOBILE
-            ================================================= */}
-            <button
-              type="button"
-              onClick={handleAuthButton}
-              className="
-                mt-2
-                flex
-                items-center
-                justify-center
-                gap-2
-                rounded-2xl
-                bg-blue-600
-                px-4
-                py-3.5
-                text-sm
-                font-bold
-                text-white
-                transition
-                hover:bg-blue-700
-              "
-            >
-              {isLoggedIn ? "Dashboard" : "Login"}
+              <MobileNavButton
+                label="Inventory"
+                onClick={() => goToPage("/inventory")}
+              />
 
-              <ArrowRight size={16} />
-            </button>
+              {/* DEALERSHIPS */}
 
-          </nav>
+              <MobileNavButton
+                label="Dealerships"
+                onClick={() => goToPage("/dealerships")}
+              />
+
+              {/* FEATURES */}
+
+              <MobileNavButton
+                label="Features"
+                onClick={() => goToPage("/features")}
+              />
+
+              {/* SERVICES */}
+
+              <MobileNavButton
+                label="Services"
+                onClick={() => goToPage("/services")}
+              />
+
+              {/* divider */}
+
+              <div className="my-2 h-px bg-white/10" />
+
+              {/* THEME */}
+
+              <div className="px-1">
+                <ThemeToggle mobile />
+              </div>
+
+              {/* LOGIN */}
+
+              <button
+                type="button"
+                onClick={handleAuthButton}
+                className="
+                  group
+                  mt-1
+                  flex
+                  w-full
+                  items-center
+                  justify-between
+                  rounded-2xl
+                  bg-blue-600
+                  px-4
+                  py-3.5
+                  text-sm
+                  font-bold
+                  text-white
+                  shadow-lg
+                  shadow-blue-600/20
+                  transition-all
+                  duration-300
+                  hover:bg-blue-500
+                "
+              >
+
+                <span>
+                  {isLoggedIn ? "Dashboard" : "Login"}
+                </span>
+
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15">
+                  <ArrowRight
+                    size={14}
+                    className="transition-transform duration-300 group-hover:translate-x-1"
+                  />
+                </span>
+
+              </button>
+
+            </nav>
+
+          </div>
         </div>
-      )}
-    </header>
+
+      </header>
+
+      {/* =====================================================
+          GLOBAL HEADER STYLE
+      ===================================================== */}
+
+      <style>{`
+        @keyframes headerFloat {
+          0% {
+            transform: translateY(0px);
+          }
+
+          50% {
+            transform: translateY(-2px);
+          }
+
+          100% {
+            transform: translateY(0px);
+          }
+        }
+      `}</style>
+    </>
+  );
+};
+
+/* ============================================================
+   DESKTOP NAV BUTTON
+============================================================ */
+
+type NavButtonProps = {
+  label: string;
+  onClick: () => void;
+};
+
+const NavButton = ({
+  label,
+  onClick,
+}: NavButtonProps) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="
+        group
+        relative
+        rounded-full
+        px-5
+        py-2.5
+        text-[10px]
+        font-semibold
+        uppercase
+        tracking-[0.08em]
+        text-white/65
+        transition-all
+        duration-300
+        hover:bg-white/[0.09]
+        hover:text-white
+      "
+    >
+      <span className="relative z-10">
+        {label}
+      </span>
+
+      {/* blue bottom glow */}
+
+      <span
+        className="
+          absolute
+          bottom-1
+          left-1/2
+          h-px
+          w-0
+          -translate-x-1/2
+          bg-blue-400
+          opacity-0
+          shadow-[0_0_10px_rgba(96,165,250,0.9)]
+          transition-all
+          duration-300
+          group-hover:w-5
+          group-hover:opacity-100
+        "
+      />
+    </button>
+  );
+};
+
+/* ============================================================
+   MOBILE NAV BUTTON
+============================================================ */
+
+type MobileNavButtonProps = {
+  label: string;
+  onClick: () => void;
+};
+
+const MobileNavButton = ({
+  label,
+  onClick,
+}: MobileNavButtonProps) => {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="
+        group
+        flex
+        w-full
+        items-center
+        justify-between
+        rounded-2xl
+        px-4
+        py-3.5
+        text-left
+        text-sm
+        font-semibold
+        text-white/75
+        transition-all
+        duration-300
+        hover:bg-white/[0.08]
+        hover:text-white
+      "
+    >
+      <span>
+        {label}
+      </span>
+
+      <span
+        className="
+          flex
+          h-7
+          w-7
+          items-center
+          justify-center
+          rounded-full
+          border
+          border-white/10
+          bg-white/[0.04]
+          transition-all
+          duration-300
+          group-hover:border-blue-400/30
+          group-hover:bg-blue-500/10
+        "
+      >
+        <ArrowRight
+          size={13}
+          className="transition-transform duration-300 group-hover:translate-x-0.5"
+        />
+      </span>
+    </button>
   );
 };
 
